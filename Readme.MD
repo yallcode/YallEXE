@@ -26,7 +26,7 @@ YallEXE is a web-based compiler frontend that takes a **zipped HTML project** an
 | 🍎 macOS | `.dmg` | Electron + DMG |
 | 📱 iOS | `.ipa` | Capacitor + Xcode |
 
-The **frontend** is already live at [yallcode.github.io/YallEXE](https://yallcode.github.io/YallEXE/). This README documents the full project — what's built, what's mocked, and **how to wire up the real backend** using GitHub Actions.
+The **frontend** is already live at [yallcode.github.io/YallEXE](https://yallcode.github.io/YallEXE/). This README documents the full project, what's built, what's mocked, and **how to wire up the real backend** using GitHub Actions.
 
 ---
 
