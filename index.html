@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YallEXE — HTML to Native Apps</title>
+  <link rel="icon" href="icon.png" type="image/png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Syne', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              orange: '#ff6b35',
+              teal:   '#00d4aa',
+              dark:   '#0a0a0a',
+              surface:'#111111',
+              card:   '#161616',
+              border: '#252525',
+              muted:  '#444444',
+              text:   '#e2e2e2',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ── Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: #0a0a0a;
+      color: #e2e2e2;
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    /* ── Noise overlay ────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* ── Grid background ──────────────────────────────────── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,107,53,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,107,53,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Glow blobs ───────────────────────────────────────── */
+    .glow-blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Navbar ───────────────────────────────────────────── */
+    nav {
+      border-bottom: 1px solid #1e1e1e;
+      backdrop-filter: blur(12px);
+      background: rgba(10,10,10,0.85);
+    }
+
+    /* ── Hero text animation ──────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { text-shadow: 0 0 20px rgba(255,107,53,0.4), 0 0 60px rgba(255,107,53,0.15); }
+      50%       { text-shadow: 0 0 40px rgba(255,107,53,0.7), 0 0 100px rgba(255,107,53,0.3); }
+    }
+
+    @keyframes scanline {
+      0%   { transform: translateY(-100%); }
+      100% { transform: translateY(100vh); }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    @keyframes progressFill {
+      from { width: 0%; }
+      to   { width: var(--target-width, 100%); }
+    }
+
+    .fade-up { animation: fadeUp 0.7s ease forwards; }
+    .fade-up-1 { animation: fadeUp 0.7s ease 0.1s forwards; opacity: 0; }
+    .fade-up-2 { animation: fadeUp 0.7s ease 0.25s forwards; opacity: 0; }
+    .fade-up-3 { animation: fadeUp 0.7s ease 0.4s forwards; opacity: 0; }
+    .fade-up-4 { animation: fadeUp 0.7s ease 0.55s forwards; opacity: 0; }
+
+    .hero-title {
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    .cursor-blink::after {
+      content: '█';
+      animation: blink 1.1s step-end infinite;
+      color: #ff6b35;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Cards / Surfaces ─────────────────────────────────── */
+    .card {
+      background: #111111;
+      border: 1px solid #222222;
+      border-radius: 10px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+
+    .card:hover {
+      border-color: #333;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,107,53,0.03) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ── Drop zone ────────────────────────────────────────── */
+    #drop-zone {
+      border: 2px dashed #333;
+      border-radius: 10px;
+      transition: all 0.25s ease;
+      background: #0d0d0d;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #drop-zone.drag-over {
+      border-color: #ff6b35;
+      background: rgba(255,107,53,0.05);
+      box-shadow: 0 0 40px rgba(255,107,53,0.1) inset;
+    }
+
+    #drop-zone.file-loaded {
+      border-color: #00d4aa;
+      background: rgba(0,212,170,0.04);
+    }
+
+    #drop-zone .drop-icon {
+      transition: transform 0.3s ease;
+    }
+
+    #drop-zone:hover .drop-icon,
+    #drop-zone.drag-over .drop-icon {
+      transform: translateY(-6px);
+    }
+
+    /* ── Platform pills ───────────────────────────────────── */
+    .platform-btn {
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      background: #111;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .platform-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(255,107,53,0.12) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .platform-btn:hover::after { opacity: 1; }
+
+    .platform-btn.selected {
+      border-color: #ff6b35;
+      background: rgba(255,107,53,0.08);
+      box-shadow: 0 0 20px rgba(255,107,53,0.1);
+    }
+
+    .platform-btn.selected .platform-check {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .platform-check {
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ── iOS Advanced Accordion ───────────────────────────── */
+    #ios-advanced {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #ios-advanced.open {
+      max-height: 800px;
+    }
+
+    /* ── Input fields ─────────────────────────────────────── */
+    .field {
+      background: #0d0d0d;
+      border: 1px solid #252525;
+      border-radius: 6px;
+      color: #e2e2e2;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      outline: none;
+    }
+
+    .field:focus {
+      border-color: #ff6b35;
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+    }
+
+    .field::placeholder { color: #444; }
+
+    /* ── Toggle switch ────────────────────────────────────── */
+    .toggle-track {
+      width: 44px;
+      height: 24px;
+      border-radius: 999px;
+      background: #252525;
+      border: 1px solid #333;
+      cursor: pointer;
+      transition: background 0.25s;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .toggle-track.on {
+      background: #ff6b35;
+      border-color: #ff6b35;
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    .toggle-track.on .toggle-thumb {
+      transform: translateX(20px);
+    }
+
+    /* ── Build button ─────────────────────────────────────── */
+    #build-btn {
+      background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+      border: none;
+      border-radius: 8px;
+      color: #0a0a0a;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #build-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+    }
+
+    #build-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(255,107,53,0.4);
+    }
+
+    #build-btn:active { transform: translateY(0); }
+
+    #build-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Console log ──────────────────────────────────────── */
+    #console-log {
+      background: #080808;
+      border: 1px solid #1e1e1e;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      padding: 1rem;
+      height: 220px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    #console-log::-webkit-scrollbar { width: 4px; }
+    #console-log::-webkit-scrollbar-track { background: transparent; }
+    #console-log::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 999px; }
+
+    .log-info    { color: #888; }
+    .log-success { color: #00d4aa; }
+    .log-warning { color: #f0c040; }
+    .log-error   { color: #ff4d4d; }
+    .log-step    { color: #ff6b35; }
+    .log-dim     { color: #444; }
+
+    /* ── Progress bar ─────────────────────────────────────── */
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ff6b35, #ff8c42, #ffb347);
+      background-size: 200% 100%;
+      animation: progressShimmer 1.5s ease infinite;
+      transition: width 0.4s ease;
+    }
+
+    @keyframes progressShimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Spinner ──────────────────────────────────────────── */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: #0a0a0a;
+      border-radius: 50%;
+      animation: spin-slow 0.7s linear infinite;
+    }
+
+    /* ── File upload for iOS certs ────────────────────────── */
+    .cert-upload {
+      border: 1px dashed #2a2a2a;
+      border-radius: 6px;
+      padding: 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: #555;
+      background: #0d0d0d;
+    }
+
+    .cert-upload:hover {
+      border-color: #ff6b35;
+      color: #ff6b35;
+      background: rgba(255,107,53,0.04);
+    }
+
+    .cert-upload.loaded {
+      border-color: #00d4aa;
+      color: #00d4aa;
+    }
+
+    /* ── Status badge ─────────────────────────────────────── */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.idle    { background: #333; }
+    .status-dot.running { background: #ff6b35; animation: blink 1s ease infinite; }
+    .status-dot.done    { background: #00d4aa; }
+    .status-dot.error   { background: #ff4d4d; }
+
+    /* ── Download cards ───────────────────────────────────── */
+    .dl-card {
+      border: 1px solid #1e1e1e;
+      border-radius: 8px;
+      background: #0d0d0d;
+      transition: all 0.25s;
+    }
+
+    .dl-card:hover {
+      border-color: #00d4aa;
+      background: rgba(0,212,170,0.04);
+      box-shadow: 0 4px 20px rgba(0,212,170,0.08);
+    }
+
+    /* ── Scrollbar global ─────────────────────────────────── */
+    ::-webkit-scrollbar       { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 999px; }
+
+    /* ── Footer accent line ───────────────────────────────── */
+    footer::before {
+      content: '';
+      display: block;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #ff6b35, transparent);
+      margin-bottom: 2rem;
+    }
+
+    /* ── Section label ────────────────────────────────────── */
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #ff6b35;
+    }
+
+    /* ── Tooltip ──────────────────────────────────────────── */
+    [data-tip] {
+      position: relative;
+    }
+
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #bbb;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      padding: 0.3rem 0.6rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 50;
+    }
+
+    [data-tip]:hover::after { opacity: 1; }
+
+    /* ── Pipe separator ───────────────────────────────────── */
+    .pipe { color: #333; margin: 0 0.5rem; }
+
+    /* ── Responsive ───────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .platforms-grid { grid-template-columns: 1fr 1fr !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background -->
+  <div class="grid-bg"></div>
+  <div class="glow-blob w-96 h-96 opacity-10" style="background:#ff6b35; top:-10%; left:-10%;"></div>
+  <div class="glow-blob w-80 h-80 opacity-10" style="background:#00d4aa; bottom:10%; right:-5%;"></div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       NAV
+  ═══════════════════════════════════════════════════════ -->
+  <nav class="fixed top-0 left-0 right-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-2.5 group">
+        <img src="icon.png" alt="YallEXE" class="w-7 h-7 object-contain" onerror="this.style.display='none'" />
+        <span class="font-display font-800 text-lg tracking-tight">
+          Yall<span class="text-brand-orange">EXE</span>
+        </span>
+      </a>
+
+      <!-- Nav links -->
+      <div class="hidden sm:flex items-center gap-6 font-mono text-sm text-gray-500">
+        <a href="#converter" class="hover:text-brand-orange transition-colors">// convert</a>
+        <a href="#how-it-works" class="hover:text-brand-orange transition-colors">// how-it-works</a>
+        <a href="https://yallcode.github.io/YallaYCode/" target="_blank" class="hover:text-brand-orange transition-colors">// portfolio</a>
+      </div>
+
+      <!-- Badge -->
+      <div class="flex items-center gap-2 font-mono text-xs text-gray-600 border border-gray-800 rounded-full px-3 py-1">
+        <span class="status-dot idle" id="nav-status-dot"></span>
+        <span id="nav-status-text">ready</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════════════════ -->
+  <section class="relative z-10 pt-36 pb-20 px-6 text-center max-w-5xl mx-auto">
+    <!-- Tag -->
+    <div class="fade-up-1 inline-flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-full px-4 py-1.5 text-xs font-mono text-gray-400 mb-8">
+      <span class="w-1.5 h-1.5 rounded-full bg-brand-orange inline-block"></span>
+      HTML → Native App Compiler
+      <span class="pipe">|</span>
+      v2.0.0-beta
+    </div>
+
+    <!-- Main title -->
+    <h1 class="fade-up-2 font-display font-800 text-6xl sm:text-7xl md:text-8xl leading-none tracking-tight mb-6">
+      <span class="block text-brand-text">Your HTML,</span>
+      <span class="block hero-title text-brand-orange">Everywhere.</span>
+    </h1>
+
+    <!-- Sub -->
+    <p class="fade-up-3 text-gray-400 text-base sm:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-mono">
+      Drop a zipped HTML project. Choose your targets.<br />
+      Get a native <span class="text-brand-orange">APK</span>, <span class="text-brand-teal">EXE</span>, <span class="text-gray-300">Mac App</span>, or <span class="text-gray-300">IPA</span> — built in seconds.
+    </p>
+
+    <!-- CTA -->
+    <div class="fade-up-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="#converter"
+         class="bg-brand-orange text-black font-display font-700 text-sm px-7 py-3 rounded-lg hover:shadow-[0_0_30px_rgba(255,107,53,0.4)] transition-all duration-200 hover:-translate-y-0.5">
+        Start Building ↓
+      </a>
+      <a href="#how-it-works"
+         class="text-gray-500 font-mono text-sm px-5 py-3 rounded-lg border border-gray-800 hover:border-gray-600 hover:text-gray-300 transition-all duration-200">
+        How it works
+      </a>
+    </div>
+
+    <!-- Metrics row -->
+    <div class="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-display font-700 text-brand-orange">4</div>
+        <div class="text-xs font-mono text-gray-600 mt-1">Platforms</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-display font-700 text-brand-teal">&lt;2min</div>
+        <div class="text-xs font-mono text-gray-600 mt-1">Build Time</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-display font-700 text-white">Zero</div>
+        <div class="text-xs font-mono text-gray-600 mt-1">Config Files</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl font-display font-700 text-white">100%</div>
+        <div class="text-xs font-mono text-gray-600 mt-1">HTML Support</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HOW IT WORKS
+  ═══════════════════════════════════════════════════════ -->
+  <section id="how-it-works" class="relative z-10 py-16 px-6 max-w-5xl mx-auto">
+    <p class="section-label text-center mb-3">// process</p>
+    <h2 class="font-display font-700 text-3xl text-center mb-10">Three steps to native</h2>
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="card p-6">
+        <div class="w-9 h-9 rounded-lg bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center text-brand-orange font-mono font-700 text-sm mb-4">01</div>
+        <h3 class="font-display font-600 text-base mb-2">Upload ZIP</h3>
+        <p class="text-gray-500 text-sm font-mono leading-relaxed">Drop your HTML project — <code class="text-gray-400">index.html</code>, assets, JS, CSS — all bundled in a <code class="text-gray-400">.zip</code> file.</p>
+      </div>
+      <div class="card p-6">
+        <div class="w-9 h-9 rounded-lg bg-brand-teal/10 border border-brand-teal/20 flex items-center justify-center text-brand-teal font-mono font-700 text-sm mb-4">02</div>
+        <h3 class="font-display font-600 text-base mb-2">Pick Targets</h3>
+        <p class="text-gray-500 text-sm font-mono leading-relaxed">Choose one or more output platforms: Android APK, Windows EXE, Mac App, or iOS IPA.</p>
+      </div>
+      <div class="card p-6">
+        <div class="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 font-mono font-700 text-sm mb-4">03</div>
+        <h3 class="font-display font-600 text-base mb-2">Download</h3>
+        <p class="text-gray-500 text-sm font-mono leading-relaxed">Watch the build log in real-time and download your compiled native apps when they're ready.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CONVERTER
+  ═══════════════════════════════════════════════════════ -->
+  <section id="converter" class="relative z-10 py-10 px-6 max-w-3xl mx-auto">
+    <p class="section-label text-center mb-3">// converter</p>
+    <h2 class="font-display font-700 text-3xl text-center mb-10">Build your app</h2>
+
+    <!-- ── Step 1: Upload ──────────────────────────────────── -->
+    <div class="mb-5">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="section-label">step_01</span>
+        <span class="text-gray-600 font-mono text-xs">— upload your project</span>
+      </div>
+
+      <div id="drop-zone"
+           class="flex flex-col items-center justify-center gap-3 py-12 text-center"
+           onclick="document.getElementById('file-input').click()">
+        <!-- Icon -->
+        <div class="drop-icon w-14 h-14 rounded-xl bg-white/[0.04] border border-gray-800 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+               class="text-gray-500" id="drop-icon-svg">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-gray-300 font-display font-600 text-sm" id="drop-main-text">
+            Drop your <code class="text-brand-orange font-mono">.zip</code> project here
+          </p>
+          <p class="text-gray-600 font-mono text-xs mt-1" id="drop-sub-text">or click to browse files</p>
+        </div>
+        <div class="font-mono text-xs text-gray-700 mt-1">Max 50 MB · ZIP only</div>
+      </div>
+      <input type="file" id="file-input" accept=".zip" class="hidden" />
+    </div>
+
+    <!-- ── Step 2: Platforms ───────────────────────────────── -->
+    <div class="mb-5">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="section-label">step_02</span>
+        <span class="text-gray-600 font-mono text-xs">— select output platforms</span>
+      </div>
+
+      <div class="platforms-grid grid grid-cols-4 gap-3">
+        <!-- Android -->
+        <button class="platform-btn flex flex-col items-center gap-2 text-center" data-platform="apk">
+          <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="text-green-500">
+              <path d="M17.523 15.341A5.96 5.96 0 0 0 18 13c0-3.309-2.691-6-6-6S6 9.691 6 13c0 .827.164 1.613.455 2.333L4.037 18.43A1 1 0 0 0 5 20h14a1 1 0 0 0 .962-1.27l-2.44-3.389zm-2.618 2.659H9.095l1.537-2.133A3.988 3.988 0 0 1 8 13c0-2.206 1.794-4 4-4s4 1.794 4 4c0 .937-.325 1.795-.857 2.479l1.57 2.521zM9 7h6v1H9V7zm-1 2.5-.707-.707 1-1 .707.707L8 9.5zm7-1.207 1-.999.707.707-1 1-.707-.708z"/>
+            </svg>
+            <span class="platform-check absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-orange flex items-center justify-center">
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </span>
+          </div>
+          <span class="font-display font-600 text-xs text-gray-300">Android</span>
+          <code class="font-mono text-[10px] text-green-600">.apk</code>
+        </button>
+
+        <!-- Windows -->
+        <button class="platform-btn flex flex-col items-center gap-2 text-center" data-platform="exe">
+          <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="text-blue-400">
+              <path d="M0 12.402l9.336-1.27v9.02L0 20.25V12.4zm10.148 7.828 13.844 1.902V12.25L10.148 12.25v8.002zM0 3.748v8.9l9.336-1.27V3.748L0 3.748zm10.148.076V12.25l13.844.002V2.049l-13.844 1.775z"/>
+            </svg>
+            <span class="platform-check absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-orange flex items-center justify-center">
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </span>
+          </div>
+          <span class="font-display font-600 text-xs text-gray-300">Windows</span>
+          <code class="font-mono text-[10px] text-blue-600">.exe</code>
+        </button>
+
+        <!-- Mac -->
+        <button class="platform-btn flex flex-col items-center gap-2 text-center" data-platform="mac">
+          <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 814 1000" fill="currentColor" class="text-gray-300">
+              <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 376.7 0 248.3 0 128.5 0 57.2 21.2 31.7 35.5 18.3 47.8 6.5 80.2-1.2 108.5-1.2c69.7 0 119.4 33.8 154.4 33.8 33.4 0 91.6-37.3 165.2-37.3 20.1 0 108.8 2 168.5 100.7zm-244.9-84.8c31.1-36 53.1-86.2 53.1-136.4 0-6.5-.6-13-1.3-19.5-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 82.6-55.1 132.8 0 6.5 1.3 13 1.9 15.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 134.9-69.1z"/>
+            </svg>
+            <span class="platform-check absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-orange flex items-center justify-center">
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </span>
+          </div>
+          <span class="font-display font-600 text-xs text-gray-300">macOS</span>
+          <code class="font-mono text-[10px] text-gray-600">.dmg</code>
+        </button>
+
+        <!-- iOS -->
+        <button class="platform-btn flex flex-col items-center gap-2 text-center" data-platform="ipa" id="ios-btn">
+          <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="text-gray-200">
+              <path d="M16.318 13.714v5.484H7.682V13.714L12 11.547l4.318 2.167zm-8.318-3.75 4-2h.001l4 2V12l-4 2-4-2v-2.036zM12 2.026C6.477 2.026 2 6.503 2 12.026s4.477 10 10 10 10-4.477 10-10-4.477-10-10-10z"/>
+            </svg>
+            <span class="platform-check absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-orange flex items-center justify-center">
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </span>
+          </div>
+          <span class="font-display font-600 text-xs text-gray-300">iOS</span>
+          <code class="font-mono text-[10px] text-gray-600">.ipa</code>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── iOS Advanced Settings ───────────────────────────── -->
+    <div id="ios-advanced-wrapper" class="mb-5" style="display:none;">
+      <button id="ios-advanced-toggle"
+              class="w-full flex items-center justify-between px-4 py-3 bg-[#0e0e0e] border border-[#252525] rounded-lg text-sm font-mono text-gray-400 hover:border-[#ff6b35] hover:text-brand-orange transition-all duration-200">
+        <span class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          iOS Advanced Settings
+          <span class="text-[10px] font-mono bg-yellow-900/40 text-yellow-400 border border-yellow-800/40 rounded px-1.5 py-0.5 ml-1">Required for IPA signing</span>
+        </span>
+        <svg id="ios-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+
+      <div id="ios-advanced" class="px-4 pt-4 pb-2 bg-[#0c0c0c] border border-t-0 border-[#1e1e1e] rounded-b-lg">
+
+        <!-- YallEXE handles signing toggle -->
+        <div class="flex items-center justify-between mb-4 py-3 border-b border-[#1a1a1a]">
+          <div>
+            <p class="text-sm font-display font-600 text-gray-200">YallEXE handles signing</p>
+            <p class="text-xs font-mono text-gray-600 mt-0.5">We sign your IPA using our shared developer certificate (Ad-Hoc). Disable to provide your own.</p>
+          </div>
+          <div class="toggle-track on ml-4" id="signing-toggle" onclick="toggleSigning()">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+
+        <!-- Manual signing fields -->
+        <div id="manual-signing" style="display:none;">
+          <p class="section-label mb-3">manual signing credentials</p>
+
+          <div class="grid sm:grid-cols-2 gap-3 mb-3">
+            <!-- Provisioning Profile -->
+            <div>
+              <label class="text-xs font-mono text-gray-500 mb-1.5 block">Provisioning Profile (.mobileprovision)</label>
+              <div class="cert-upload" id="provision-drop" onclick="document.getElementById('provision-input').click()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-1.5 opacity-50"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span id="provision-text">Click or drop .mobileprovision</span>
+              </div>
+              <input type="file" id="provision-input" accept=".mobileprovision" class="hidden" />
+            </div>
+
+            <!-- P12 Certificate -->
+            <div>
+              <label class="text-xs font-mono text-gray-500 mb-1.5 block">Certificate (.p12)</label>
+              <div class="cert-upload" id="cert-drop" onclick="document.getElementById('cert-input').click()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-1.5 opacity-50"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span id="cert-text">Click or drop .p12 certificate</span>
+              </div>
+              <input type="file" id="cert-input" accept=".p12" class="hidden" />
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="mb-3">
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">Certificate Password</label>
+            <input type="password" class="field" placeholder="Certificate export password..." id="cert-password" />
+          </div>
+
+          <!-- Bundle ID -->
+          <div class="mb-3">
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">Bundle Identifier</label>
+            <input type="text" class="field" placeholder="com.yourname.appname" id="bundle-id" />
+          </div>
+
+          <!-- Team ID -->
+          <div class="mb-4">
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">Apple Team ID</label>
+            <input type="text" class="field" placeholder="XXXXXXXXXX" id="team-id" />
+          </div>
+        </div>
+
+        <!-- App name + version (always shown) -->
+        <div class="grid sm:grid-cols-2 gap-3 pb-3">
+          <div>
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">App Display Name</label>
+            <input type="text" class="field" placeholder="My App" id="app-name" />
+          </div>
+          <div>
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">Version String</label>
+            <input type="text" class="field" placeholder="1.0.0" id="app-version" value="1.0.0" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── App metadata ────────────────────────────────────── -->
+    <div class="card p-4 mb-5">
+      <p class="section-label mb-3">app_metadata</p>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-mono text-gray-500 mb-1.5 block">App Name</label>
+          <input type="text" class="field" placeholder="My Awesome App" id="global-app-name" />
+        </div>
+        <div>
+          <label class="text-xs font-mono text-gray-500 mb-1.5 block">Version</label>
+          <input type="text" class="field" placeholder="1.0.0" id="global-version" value="1.0.0" />
+        </div>
+        <div>
+          <label class="text-xs font-mono text-gray-500 mb-1.5 block">Icon (512×512 PNG)</label>
+          <div class="cert-upload" onclick="document.getElementById('icon-input').click()">
+            <span id="icon-text">Click to upload icon</span>
+          </div>
+          <input type="file" id="icon-input" accept=".png" class="hidden" />
+        </div>
+        <div>
+          <label class="text-xs font-mono text-gray-500 mb-1.5 block">Min OS / Target API</label>
+          <input type="text" class="field" placeholder="Android 8+ / iOS 14+" id="min-os" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Build button ────────────────────────────────────── -->
+    <button id="build-btn" disabled class="w-full py-4 flex items-center justify-center gap-2.5" onclick="startBuild()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Compile to Native
+    </button>
+
+    <!-- ── Build panel ─────────────────────────────────────── -->
+    <div id="build-panel" class="mt-5 hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="status-dot idle" id="build-status-dot"></span>
+          <span class="font-mono text-xs text-gray-500" id="build-status-label">idle</span>
+        </div>
+        <div class="font-mono text-xs text-gray-600" id="build-eta">--:--</div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden mb-3">
+        <div class="progress-bar-fill rounded-full" id="progress-fill" style="width:0%"></div>
+      </div>
+
+      <!-- Per-platform progress -->
+      <div id="platform-progress" class="grid gap-2 mb-4"></div>
+
+      <!-- Console -->
+      <div id="console-log">
+        <div class="log-dim">// YallEXE Build Console</div>
+        <div class="log-dim">// Waiting for build to start...</div>
+      </div>
+
+      <!-- Downloads (shown after build) -->
+      <div id="downloads-section" class="hidden mt-4">
+        <p class="section-label mb-3">// downloads ready</p>
+        <div id="downloads-grid" class="grid gap-2"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════════════════ -->
+  <footer class="relative z-10 py-10 px-6 text-center">
+    <div class="flex items-center justify-center gap-2.5 mb-4">
+      <img src="icon.png" alt="" class="w-5 h-5 object-contain opacity-70" onerror="this.style.display='none'" />
+      <span class="font-display font-700 text-sm">Yall<span class="text-brand-orange">EXE</span></span>
+    </div>
+    <p class="font-mono text-xs text-gray-700">
+      Built by <a href="https://yallcode.github.io/YallaYCode/" class="text-gray-500 hover:text-brand-orange transition-colors" target="_blank">YallCode</a>
+      <span class="pipe">|</span>
+      <a href="https://github.com/yallcode" class="text-gray-500 hover:text-brand-orange transition-colors" target="_blank">GitHub</a>
+      <span class="pipe">|</span>
+      <a href="https://discord.gg/yUe8kE5fRF" class="text-gray-500 hover:text-brand-orange transition-colors" target="_blank">Discord</a>
+    </p>
+    <p class="font-mono text-[10px] text-gray-800 mt-2">YallEXE v2.0.0-beta · HTML → Native</p>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════════════════ -->
+  <script>
+  /* ── State ───────────────────────────────────────────────── */
+  const state = {
+    file: null,
+    platforms: new Set(),
+    signingMode: 'yallexe', // 'yallexe' | 'manual'
+    buildRunning: false,
+    buildDone: false,
+  };
+
+  /* ── DOM refs ────────────────────────────────────────────── */
+  const dropZone       = document.getElementById('drop-zone');
+  const fileInput      = document.getElementById('file-input');
+  const buildBtn       = document.getElementById('build-btn');
+  const buildPanel     = document.getElementById('build-panel');
+  const consoleLog     = document.getElementById('console-log');
+  const progressFill   = document.getElementById('progress-fill');
+  const buildStatusDot = document.getElementById('build-status-dot');
+  const buildStatusLbl = document.getElementById('build-status-label');
+  const buildEta       = document.getElementById('build-eta');
+  const navStatusDot   = document.getElementById('nav-status-dot');
+  const navStatusText  = document.getElementById('nav-status-text');
+  const iosWrapper     = document.getElementById('ios-advanced-wrapper');
+  const iosAdvanced    = document.getElementById('ios-advanced');
+  const iosChevron     = document.getElementById('ios-chevron');
+  const manualSigning  = document.getElementById('manual-signing');
+  const signingToggle  = document.getElementById('signing-toggle');
+  const platButtons    = document.querySelectorAll('.platform-btn');
+  const platProgress   = document.getElementById('platform-progress');
+  const downloadsSection = document.getElementById('downloads-section');
+  const downloadsGrid    = document.getElementById('downloads-grid');
+
+  /* ── Drop zone ───────────────────────────────────────────── */
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+  });
+
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(f) {
+    if (!f.name.endsWith('.zip')) {
+      showError('Only .zip files are supported.');
+      return;
+    }
+    state.file = f;
+    const sizeStr = f.size > 1024 * 1024
+      ? (f.size / 1024 / 1024).toFixed(1) + ' MB'
+      : (f.size / 1024).toFixed(0) + ' KB';
+
+    dropZone.classList.remove('drag-over');
+    dropZone.classList.add('file-loaded');
+    dropZone.querySelector('.drop-icon').innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+           stroke="#00d4aa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>`;
+    document.getElementById('drop-main-text').innerHTML =
+      `<span class="text-brand-teal">${escHtml(f.name)}</span>`;
+    document.getElementById('drop-sub-text').textContent = sizeStr + ' · Click to replace';
+
+    checkBuildReady();
+  }
+
+  /* ── Platform buttons ────────────────────────────────────── */
+  platButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.platform;
+      if (state.platforms.has(p)) {
+        state.platforms.delete(p);
+        btn.classList.remove('selected');
+      } else {
+        state.platforms.add(p);
+        btn.classList.add('selected');
+      }
+      // Show/hide iOS advanced settings
+      iosWrapper.style.display = state.platforms.has('ipa') ? 'block' : 'none';
+      if (!state.platforms.has('ipa')) {
+        iosAdvanced.classList.remove('open');
+        iosChevron.style.transform = '';
+      }
+      checkBuildReady();
+    });
+  });
+
+  /* ── iOS accordion ───────────────────────────────────────── */
+  document.getElementById('ios-advanced-toggle').addEventListener('click', () => {
+    const open = iosAdvanced.classList.toggle('open');
+    iosChevron.style.transform = open ? 'rotate(180deg)' : '';
+  });
+
+  /* ── Signing toggle ──────────────────────────────────────── */
+  function toggleSigning() {
+    const isOn = signingToggle.classList.toggle('on');
+    state.signingMode = isOn ? 'yallexe' : 'manual';
+    manualSigning.style.display = isOn ? 'none' : 'block';
+  }
+
+  /* ── Certificate file inputs ─────────────────────────────── */
+  document.getElementById('provision-input').addEventListener('change', e => {
+    if (e.target.files[0]) {
+      document.getElementById('provision-text').textContent = e.target.files[0].name;
+      document.getElementById('provision-drop').classList.add('loaded');
+    }
+  });
+  document.getElementById('cert-input').addEventListener('change', e => {
+    if (e.target.files[0]) {
+      document.getElementById('cert-text').textContent = e.target.files[0].name;
+      document.getElementById('cert-drop').classList.add('loaded');
+    }
+  });
+  document.getElementById('icon-input').addEventListener('change', e => {
+    if (e.target.files[0]) {
+      document.getElementById('icon-text').textContent = e.target.files[0].name;
+    }
+  });
+
+  /* ── Build readiness ─────────────────────────────────────── */
+  function checkBuildReady() {
+    const ready = state.file && state.platforms.size > 0 && !state.buildRunning;
+    buildBtn.disabled = !ready;
+  }
+
+  /* ── Build simulation ────────────────────────────────────── */
+  function startBuild() {
+    if (state.buildRunning || !state.file || state.platforms.size === 0) return;
+    state.buildRunning = true;
+    state.buildDone = false;
+
+    buildBtn.disabled = true;
+    buildPanel.classList.remove('hidden');
+    downloadsSection.classList.add('hidden');
+    downloadsGrid.innerHTML = '';
+    consoleLog.innerHTML = '';
+    progressFill.style.width = '0%';
+    platProgress.innerHTML = '';
+
+    setStatus('running');
+
+    buildPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const platforms = [...state.platforms];
+    const appName   = document.getElementById('global-app-name').value.trim() || 'YallApp';
+    const version   = document.getElementById('global-version').value.trim() || '1.0.0';
+
+    const platformMeta = {
+      apk: { label: 'Android APK', ext: '.apk',  color: '#22c55e', steps: buildSteps.android },
+      exe: { label: 'Windows EXE', ext: '.exe',  color: '#60a5fa', steps: buildSteps.windows },
+      mac: { label: 'macOS DMG',   ext: '.dmg',  color: '#d1d5db', steps: buildSteps.mac     },
+      ipa: { label: 'iOS IPA',     ext: '.ipa',  color: '#e5e7eb', steps: buildSteps.ios     },
+    };
+
+    // Init per-platform rows
+    platforms.forEach(p => {
+      const meta = platformMeta[p];
+      const row = document.createElement('div');
+      row.id = `plat-row-${p}`;
+      row.className = 'flex items-center gap-3 text-xs font-mono';
+      row.innerHTML = `
+        <span style="color:${meta.color}" class="w-24 shrink-0">${meta.label}</span>
+        <div class="flex-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+          <div id="plat-fill-${p}" class="h-full rounded-full transition-all duration-500"
+               style="width:0%;background:${meta.color}"></div>
+        </div>
+        <span id="plat-pct-${p}" class="text-gray-600 w-8 text-right">0%</span>
+        <span id="plat-status-${p}" class="text-gray-700 w-12">queued</span>
+      `;
+      platProgress.appendChild(row);
+    });
+
+    // Collect all log events with timestamps
+    let allEvents = [];
+    let t = 0;
+
+    log('// ─────────────────────────────────────────────────', 'log-dim', t);
+    log(`// YallEXE Build  ·  ${new Date().toLocaleTimeString()}`, 'log-dim', t += 20);
+    log(`// Project: ${state.file.name}   App: ${appName} v${version}`, 'log-dim', t += 20);
+    log(`// Targets: ${platforms.map(p => platformMeta[p].label).join(', ')}`, 'log-dim', t += 20);
+    log('// ─────────────────────────────────────────────────', 'log-dim', t += 20);
+
+    t += 300;
+    log('› Extracting project archive...', 'log-info', t);
+    t += 600;
+    log('✓ index.html found — entry point confirmed', 'log-success', t);
+    t += 200;
+    log(`✓ ${Math.floor(Math.random()*8)+3} assets catalogued (JS, CSS, images)`, 'log-success', t);
+    t += 400;
+    log('› Validating HTML structure...', 'log-info', t);
+    t += 500;
+    log('✓ No critical errors detected', 'log-success', t);
+
+    let overallTotal = 0;
+    let overallDone  = 0;
+
+    const platformQueue = platforms.map(p => {
+      const steps = platformMeta[p].steps;
+      const total = steps.reduce((a, s) => a + s.dur, 0);
+      overallTotal += total;
+      return { p, steps, total, meta: platformMeta[p] };
+    });
+
+    // Stagger platform builds
+    let offset = t + 600;
+    platformQueue.forEach(({ p, steps, total, meta }) => {
+      let localT = offset;
+      let accum  = 0;
+
+      log(`\n[${meta.label}] Starting build...`, 'log-step', localT);
+      localT += 200;
+
+      steps.forEach((step, i) => {
+        log(`  [${meta.label}] ${step.msg}`, step.type, localT);
+        const stepEnd = localT + step.dur;
+        const iLast   = i === steps.length - 1;
+
+        // Schedule progress updates during this step
+        const ticks = 10;
+        for (let tick = 1; tick <= ticks; tick++) {
+          const tickT = localT + (step.dur / ticks) * tick;
+          const stepFrac = (accum + step.dur * (tick / ticks)) / total;
+          const pct = Math.round(stepFrac * 100);
+          scheduleAt(tickT, () => {
+            document.getElementById(`plat-fill-${p}`).style.width = pct + '%';
+            document.getElementById(`plat-pct-${p}`).textContent = pct + '%';
+            if (pct < 100) {
+              document.getElementById(`plat-status-${p}`).textContent = 'building';
+              document.getElementById(`plat-status-${p}`).style.color = '#ff6b35';
+            }
+
+            // Overall
+            overallDone = platformQueue.reduce((sum, q) => {
+              const fill = document.getElementById(`plat-fill-${q.p}`);
+              if (!fill) return sum;
+              return sum + (parseFloat(fill.style.width) / 100) * q.total;
+            }, 0);
+            const globalPct = Math.round((overallDone / overallTotal) * 100);
+            progressFill.style.width = globalPct + '%';
+            updateEta(globalPct);
+          });
+        }
+
+        accum += step.dur;
+        localT = stepEnd + (i < steps.length - 1 ? 300 : 0);
+      });
+
+      // Mark done
+      scheduleAt(localT + 100, () => {
+        document.getElementById(`plat-fill-${p}`).style.width = '100%';
+        document.getElementById(`plat-pct-${p}`).textContent = '100%';
+        document.getElementById(`plat-status-${p}`).textContent = '✓ done';
+        document.getElementById(`plat-status-${p}`).style.color = '#00d4aa';
+      });
+
+      log(`✓ [${meta.label}] Build complete → ${appName}${meta.ext}`, 'log-success', localT + 200);
+      offset = localT + 600;
+    });
+
+    // Finalize
+    scheduleAt(offset + 400, () => {
+      progressFill.style.width = '100%';
+      buildEta.textContent = '00:00';
+      setStatus('done');
+      log('\n✓ All builds finished successfully!', 'log-success');
+      log('→ Downloads are ready below ↓', 'log-success');
+      state.buildRunning = false;
+      state.buildDone = true;
+
+      // Show downloads
+      downloadsSection.classList.remove('hidden');
+      platforms.forEach(p => {
+        const meta = platformMeta[p];
+        const card = document.createElement('div');
+        card.className = 'dl-card flex items-center justify-between px-4 py-3';
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono font-700"
+                 style="background:${meta.color}20; color:${meta.color}; border:1px solid ${meta.color}30">
+              ${p.toUpperCase()}
+            </div>
+            <div>
+              <p class="text-sm font-display font-600 text-gray-200">${appName}${meta.ext}</p>
+              <p class="text-xs font-mono text-gray-600">${meta.label} · v${version}</p>
+            </div>
+          </div>
+          <button onclick="mockDownload('${appName}${meta.ext}')"
+                  class="text-xs font-mono text-brand-teal border border-brand-teal/30 px-3 py-1.5 rounded-md hover:bg-brand-teal/10 transition-colors">
+            ↓ Download
+          </button>
+        `;
+        downloadsGrid.appendChild(card);
+      });
+
+      buildBtn.disabled = false;
+      buildBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5.1L1 10"/>
+        </svg>
+        Build Again
+      `;
+    });
+  }
+
+  /* ── Build steps config ──────────────────────────────────── */
+  const buildSteps = {
+    android: [
+      { msg: 'Setting up Gradle build environment...', type: 'log-info',    dur: 800  },
+      { msg: 'Installing Capacitor Android platform...', type: 'log-info',  dur: 1200 },
+      { msg: 'Syncing web assets to Android project...', type: 'log-info',  dur: 600  },
+      { msg: 'Compiling Java sources...', type: 'log-info',                 dur: 2000 },
+      { msg: 'Linking resources and assets...', type: 'log-info',           dur: 700  },
+      { msg: 'Signing APK (debug keystore)...', type: 'log-warning',        dur: 500  },
+      { msg: 'Running ProGuard shrinking pass...', type: 'log-info',        dur: 900  },
+      { msg: 'Generating final APK...', type: 'log-info',                   dur: 400  },
+    ],
+    windows: [
+      { msg: 'Initialising Electron builder...', type: 'log-info',          dur: 600  },
+      { msg: 'Bundling HTML/JS with webpack...', type: 'log-info',          dur: 1400 },
+      { msg: 'Injecting Electron main process...', type: 'log-info',        dur: 500  },
+      { msg: 'Compiling native Node addons...', type: 'log-info',           dur: 1000 },
+      { msg: 'Packaging resources & ASAR...', type: 'log-info',             dur: 800  },
+      { msg: 'Generating Windows installer (NSIS)...', type: 'log-info',    dur: 700  },
+      { msg: 'Code-signing EXE (self-signed)...', type: 'log-warning',      dur: 400  },
+    ],
+    mac: [
+      { msg: 'Cloning Electron Mac target...', type: 'log-info',            dur: 700  },
+      { msg: 'Bundling web assets...', type: 'log-info',                    dur: 900  },
+      { msg: 'Generating Info.plist...', type: 'log-info',                  dur: 300  },
+      { msg: 'Compiling universal binary (arm64/x86_64)...', type: 'log-info', dur: 2200 },
+      { msg: 'Signing .app bundle...', type: 'log-warning',                 dur: 600  },
+      { msg: 'Creating DMG image...', type: 'log-info',                     dur: 800  },
+      { msg: 'Notarising with Apple servers...', type: 'log-info',          dur: 1000 },
+    ],
+    ios: [
+      { msg: 'Installing Capacitor iOS platform...', type: 'log-info',      dur: 900  },
+      { msg: 'Syncing web assets to Xcode project...', type: 'log-info',    dur: 600  },
+      { msg: 'Configuring entitlements & plist...', type: 'log-info',       dur: 400  },
+      { msg: 'Running xcodebuild (Release, arm64)...', type: 'log-info',    dur: 3000 },
+      { msg: 'Signing IPA with provisioning profile...', type: 'log-warning', dur: 700 },
+      { msg: 'Running codesign verification...', type: 'log-info',          dur: 400  },
+      { msg: 'Packaging .ipa archive...', type: 'log-info',                 dur: 500  },
+    ],
+  };
+
+  /* ── Utility helpers ─────────────────────────────────────── */
+  const timers = [];
+
+  function scheduleAt(ms, fn) {
+    timers.push(setTimeout(fn, ms));
+  }
+
+  function log(msg, cls = 'log-info', delay = 0) {
+    scheduleAt(delay, () => {
+      const line = document.createElement('div');
+      line.className = cls;
+      line.textContent = msg;
+      consoleLog.appendChild(line);
+      consoleLog.scrollTop = consoleLog.scrollHeight;
+    });
+  }
+
+  function setStatus(s) {
+    buildStatusDot.className = 'status-dot ' + s;
+    navStatusDot.className = 'status-dot ' + s;
+    const labels = { idle: 'idle', running: 'building', done: 'complete', error: 'error' };
+    buildStatusLbl.textContent = labels[s] || s;
+    navStatusText.textContent  = labels[s] || s;
+
+    if (s === 'running') {
+      buildBtn.innerHTML = `<div class="spinner"></div> Building…`;
+    }
+  }
+
+  let etaSeconds = 0;
+  function updateEta(pct) {
+    if (pct >= 100) { buildEta.textContent = '00:00'; return; }
+    const remaining = Math.max(0, Math.round(((100 - pct) / 100) * 60));
+    const m = Math.floor(remaining / 60).toString().padStart(2, '0');
+    const s = (remaining % 60).toString().padStart(2, '0');
+    buildEta.textContent = `~${m}:${s}`;
+  }
+
+  function mockDownload(filename) {
+    const blob = new Blob(['YallEXE mock build output'], { type: 'application/octet-stream' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function showError(msg) {
+    consoleLog.innerHTML += `<div class="log-error">✗ Error: ${escHtml(msg)}</div>`;
+    setStatus('error');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  </script>
+</body>
+</html>
