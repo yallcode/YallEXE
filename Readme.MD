@@ -455,7 +455,7 @@ jobs:
 
 ### cloudflare worker
 
-same idea as the YallAnime worker. one Worker does everything: receives the zip, stores it in R2, fires off the right github actions workflow, handles the webhook callback, and serves the status to the frontend when it polls.
+Same as what i used for YallAnime. One Worker does everything: receives the zip, stores it in R2, fires off the right github actions workflow, handles the webhook callback, and serves the status to the frontend when it polls.
 
 **create the R2 bucket**
 
