@@ -22,6 +22,10 @@ on:
         required: false
         type: string
         default: 'com.yallexe.app'
+      min_os:
+        required: false
+        type: string
+        default: '14'
 
 jobs:
   build:
@@ -52,12 +56,16 @@ jobs:
 
       - name: build ipa unsigned
         run: |
+          MIN_IOS="${{ github.event.inputs.min_os }}"
+          MIN_IOS=$(echo "$MIN_IOS" | grep -o '[0-9]*\(\.[0-9]*\)\?' | head -1)
+          MIN_IOS="${MIN_IOS:-14}"
           cd project/ios/App
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
+            IPHONEOS_DEPLOYMENT_TARGET="$MIN_IOS" \
             archive \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
