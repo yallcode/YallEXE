@@ -1,58 +1,57 @@
 <div align="center">
 
-<img src="icon.png" width="80" height="80" alt="YallEXE Logo" />
+<img src="icon.png" width="80" alt="YallEXE" />
 
 # YallEXE
 
-**Turn any HTML project into a native app — Android, Windows, macOS, and iOS.**
+turn any html project into a real native app. android, windows, mac, ios.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-yallcode.github.io%2FYallEXE-ff6b35?style=flat-square&logo=github)](https://yallcode.github.io/YallEXE/)
+[![Live Site](https://img.shields.io/badge/live-yallcode.github.io/YallEXE-ff6b35?style=flat-square)](https://yallcode.github.io/YallEXE/)
 [![Version](https://img.shields.io/badge/version-2.0.0--beta-00d4aa?style=flat-square)](https://github.com/yallcode/YallEXE/releases)
-[![License](https://img.shields.io/badge/license-MIT-white?style=flat-square)](LICENSE)
-[![YallCode](https://img.shields.io/badge/by-YallCode-ff6b35?style=flat-square)](https://yallcode.github.io/YallaYCode/)
+[![By YallCode](https://img.shields.io/badge/by-YallCode-white?style=flat-square)](https://yallcode.github.io/YallaYCode/)
 
 </div>
 
 ---
 
-## What is YallEXE?
+## what is this
 
-YallEXE is a web-based compiler frontend that takes a **zipped HTML project** and converts it into native installable apps across all major platforms:
+YallEXE takes a zipped HTML project (your index.html, js, css, assets, all of it) and compiles it into installable native apps. you pick which platforms you want and it handles the rest.
 
-| Platform | Output | Engine |
-|----------|--------|--------|
-| 🤖 Android | `.apk` | Capacitor + Gradle |
-| 🪟 Windows | `.exe` | Electron + NSIS |
-| 🍎 macOS | `.dmg` | Electron + DMG |
-| 📱 iOS | `.ipa` | Capacitor + Xcode |
+the frontend is live at [yallcode.github.io/YallEXE](https://yallcode.github.io/YallEXE/). the backend is still being wired up so this readme covers everything including all the code you need to make builds actually work.
 
-The **frontend** is already live at [yallcode.github.io/YallEXE](https://yallcode.github.io/YallEXE/). This README documents the full project, what's built, what's mocked, and **how to wire up the real backend** using GitHub Actions.
+platforms it supports:
 
----
-
-## Table of Contents
-
-- [Project Structure](#project-structure)
-- [Frontend Features](#frontend-features)
-- [How the Backend Works (Architecture)](#how-the-backend-works-architecture)
-- [Full Backend Tutorial](#full-backend-tutorial)
-  - [Step 1 — GitHub Actions Workflows](#step-1--github-actions-workflows)
-  - [Step 2 — Cloudflare Worker API](#step-2--cloudflare-worker-api)
-  - [Step 3 — Connect the Frontend](#step-3--connect-the-frontend)
-- [iOS Code Signing Guide](#ios-code-signing-guide)
-- [Deploying to GitHub Pages](#deploying-to-github-pages)
-- [Roadmap](#roadmap)
-- [Credits](#credits)
+| platform | output | how it builds |
+|----------|--------|---------------|
+| Android | .apk | Capacitor + Gradle |
+| Windows | .exe | Electron + NSIS |
+| macOS | .dmg | Electron + DMG |
+| iOS | .ipa | Capacitor + Xcode |
 
 ---
 
-## Project Structure
+## table of contents
+
+- [project structure](#project-structure)
+- [how it works](#how-it-works)
+- [backend setup](#backend-setup)
+  - [github actions workflows](#github-actions-workflows)
+  - [cloudflare worker](#cloudflare-worker)
+  - [connecting the frontend](#connecting-the-frontend)
+- [ios signing](#ios-signing)
+- [github pages](#github-pages)
+- [roadmap](#roadmap)
+
+---
+
+## project structure
 
 ```
 YallEXE/
-├── index.html          # Entire frontend (single file)
-├── icon.png            # App logo / favicon
-├── README.md           # This file
+├── index.html
+├── icon.png
+├── README.md
 └── .github/
     └── workflows/
         ├── build-android.yml
@@ -61,74 +60,41 @@ YallEXE/
         └── build-ios.yml
 ```
 
----
-
-## Frontend Features
-
-- **Drag & Drop Upload** — drop a `.zip` file containing your HTML project
-- **Platform Selector** — toggle Android, Windows, macOS, iOS independently
-- **iOS Advanced Settings** — toggle between YallEXE-managed signing and manual certificate upload (`.mobileprovision` + `.p12`)
-- **App Metadata** — set app name, version, icon, and minimum OS version
-- **Live Build Console** — terminal-style log viewer with color-coded output levels
-- **Per-Platform Progress Bars** — individual fill bars for each build target
-- **Download Panel** — download buttons for each compiled artifact
-- **Dark Terminal UI** — built with Tailwind CDN + JetBrains Mono + Syne fonts, zero dependencies
-
-> **Note:** The current frontend simulates builds with mock timers. The sections below show you how to connect it to real GitHub Actions builds.
+nothing complicated. single html file for the frontend, github actions for the actual building, cloudflare worker as the api in between.
 
 ---
 
-## How the Backend Works (Architecture)
+## how it works
 
 ```
-User Browser
-    │
-    │  1. Upload .zip + config (POST multipart)
-    ▼
-Cloudflare Worker  (yallexe.workers.dev)
-    │
-    │  2. Store zip in R2 bucket
-    │  3. Trigger GitHub Actions via workflow_dispatch API
-    │  4. Return a build_id to the browser
-    ▼
-GitHub Actions Runner
-    │
-    │  5. Download zip from R2
-    │  6. Run Capacitor / Electron build
-    │  7. Upload artifact (.apk / .exe / .dmg / .ipa)
-    │  8. Call webhook back → Cloudflare Worker
-    ▼
-Cloudflare Worker  (webhook receiver)
-    │
-    │  9. Store artifact URL keyed by build_id
-    ▼
-User Browser
-    │  10. Poll GET /status/:build_id every 3s
-    │  11. When done → show download link
-    ▼
-  ✅ User downloads native app
+user uploads zip on the site
+       |
+cloudflare worker receives it
+stores zip in R2, fires off github actions, returns a build_id
+       |
+github actions runner picks it up
+runs gradle or electron or xcode depending on platform
+uploads the artifact, pings the webhook back
+       |
+frontend polls /status/:build_id every 3 seconds
+once all platforms report done it shows the download links
 ```
 
----
-
-## Full Backend Tutorial
-
-### Prerequisites
-
-Before starting, make sure you have:
-
-- A [GitHub](https://github.com) account (you already have `yallcode`)
-- A [Cloudflare](https://cloudflare.com) account (free tier works)
-- [Node.js](https://nodejs.org) installed locally (or use GitHub Codespaces)
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) — `npm install -g wrangler`
+i went with Cloudflare Workers for the api because i already use it for my YallAnime streaming site and the setup is exactly the same. R2 handles storing the uploaded zips for free at the scale this needs. no reason to learn a new platform when this stack already works.
 
 ---
 
-### Step 1 — GitHub Actions Workflows
+## backend setup
 
-Create these four workflow files inside `.github/workflows/` in your `YallEXE` repo.
+### github actions workflows
 
-#### `build-android.yml`
+create `.github/workflows/` in your repo and drop these four files in. each one gets triggered remotely and runs on github's machines so nothing compiles locally, which matters if you are on a chromebook.
+
+before anything else go to repo Settings, then Actions, then General, and set workflow permissions to **Read and write**.
+
+---
+
+**build-android.yml**
 
 ```yaml
 name: Build Android APK
@@ -157,27 +123,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup Java
+      - name: setup java
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Node.js
+      - name: setup node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install Capacitor CLI
+      - name: install capacitor
         run: npm install -g @capacitor/cli
 
-      - name: Download project ZIP
+      - name: download zip
         run: |
           curl -L "${{ github.event.inputs.zip_url }}" -o project.zip
-          mkdir project && cd project
-          unzip ../project.zip
+          mkdir project && cd project && unzip ../project.zip
 
-      - name: Scaffold Capacitor Android project
+      - name: setup capacitor android
         run: |
           cd project
           npm init -y
@@ -186,33 +151,28 @@ jobs:
             "com.yallexe.$(echo ${{ github.event.inputs.app_name }} | tr '[:upper:]' '[:lower:]' | tr -d ' ')" \
             --web-dir .
           npx cap add android
-
-      - name: Sync web assets
-        run: |
-          cd project
           npx cap sync android
 
-      - name: Build APK
+      - name: build apk
         run: |
           cd project/android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload artifact
+      - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: android-apk-${{ github.event.inputs.build_id }}
           path: project/android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Notify webhook (success)
+      - name: notify webhook on success
         if: success()
         run: |
-          ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           curl -X POST "${{ github.event.inputs.webhook_url }}" \
             -H "Content-Type: application/json" \
             -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"apk\",\"status\":\"done\",\"run_id\":\"${{ github.run_id }}\"}"
 
-      - name: Notify webhook (failure)
+      - name: notify webhook on failure
         if: failure()
         run: |
           curl -X POST "${{ github.event.inputs.webhook_url }}" \
@@ -220,7 +180,9 @@ jobs:
             -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"apk\",\"status\":\"error\"}"
 ```
 
-#### `build-windows.yml`
+---
+
+**build-windows.yml**
 
 ```yaml
 name: Build Windows EXE
@@ -249,23 +211,17 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Setup Node.js
+      - name: setup node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Download project ZIP
+      - name: download and setup project
         shell: bash
         run: |
           curl -L "${{ github.event.inputs.zip_url }}" -o project.zip
-          mkdir project
-          cd project
-          unzip ../project.zip
+          mkdir project && cd project && unzip ../project.zip
 
-      - name: Setup Electron project
-        shell: bash
-        run: |
-          cd project
           cat > package.json << EOF
           {
             "name": "${{ github.event.inputs.app_name }}",
@@ -283,7 +239,6 @@ jobs:
 
           cat > main.js << 'EOF'
           const { app, BrowserWindow } = require('electron')
-          const path = require('path')
           function createWindow() {
             const win = new BrowserWindow({ width: 1200, height: 800 })
             win.loadFile('index.html')
@@ -293,19 +248,17 @@ jobs:
 
           npm install electron electron-builder --save-dev
 
-      - name: Build EXE
+      - name: build exe
         shell: bash
-        run: |
-          cd project
-          npm run build
+        run: cd project && npm run build
 
-      - name: Upload artifact
+      - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: windows-exe-${{ github.event.inputs.build_id }}
           path: project/dist/*.exe
 
-      - name: Notify webhook (success)
+      - name: notify webhook on success
         if: success()
         shell: bash
         run: |
@@ -313,7 +266,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"exe\",\"status\":\"done\",\"run_id\":\"${{ github.run_id }}\"}"
 
-      - name: Notify webhook (failure)
+      - name: notify webhook on failure
         if: failure()
         shell: bash
         run: |
@@ -322,7 +275,9 @@ jobs:
             -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"exe\",\"status\":\"error\"}"
 ```
 
-#### `build-mac.yml`
+---
+
+**build-mac.yml**
 
 ```yaml
 name: Build macOS DMG
@@ -351,12 +306,12 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Setup Node.js
+      - name: setup node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Download and setup project
+      - name: download and setup project
         run: |
           curl -L "${{ github.event.inputs.zip_url }}" -o project.zip
           mkdir project && cd project && unzip ../project.zip
@@ -387,23 +342,23 @@ jobs:
 
           npm install electron electron-builder --save-dev
 
-      - name: Build DMG
+      - name: build dmg
         run: cd project && npm run build
 
-      - name: Upload artifact
+      - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: mac-dmg-${{ github.event.inputs.build_id }}
           path: project/dist/*.dmg
 
-      - name: Notify webhook (success)
+      - name: notify webhook on success
         if: success()
         run: |
           curl -X POST "${{ github.event.inputs.webhook_url }}" \
             -H "Content-Type: application/json" \
             -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"mac\",\"status\":\"done\",\"run_id\":\"${{ github.run_id }}\"}"
 
-      - name: Notify webhook (failure)
+      - name: notify webhook on failure
         if: failure()
         run: |
           curl -X POST "${{ github.event.inputs.webhook_url }}" \
@@ -411,7 +366,9 @@ jobs:
             -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"mac\",\"status\":\"error\"}"
 ```
 
-#### `build-ios.yml`
+---
+
+**build-ios.yml**
 
 ```yaml
 name: Build iOS IPA
@@ -444,20 +401,20 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Setup Node.js
+      - name: setup node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install Capacitor
+      - name: install capacitor
         run: npm install -g @capacitor/cli
 
-      - name: Download project
+      - name: download project
         run: |
           curl -L "${{ github.event.inputs.zip_url }}" -o project.zip
           mkdir project && cd project && unzip ../project.zip
 
-      - name: Scaffold Capacitor iOS
+      - name: setup capacitor ios
         run: |
           cd project
           npm init -y
@@ -466,7 +423,7 @@ jobs:
           npx cap add ios
           npx cap sync ios
 
-      - name: Build IPA (unsigned)
+      - name: build ipa unsigned
         run: |
           cd project/ios/App
           xcodebuild \
@@ -479,58 +436,42 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-          xcodebuild \
-            -exportArchive \
-            -archivePath build/App.xcarchive \
-            -exportPath build/output \
-            -exportOptionsPlist exportOptions.plist
-
-      - name: Upload artifact
+      - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: ios-ipa-${{ github.event.inputs.build_id }}
-          path: project/ios/App/build/output/*.ipa
+          path: project/ios/App/build/**/*.ipa
 
-      - name: Notify webhook
+      - name: notify webhook
         if: always()
         run: |
-          STATUS=${{ job.status == 'success' && 'done' || 'error' }}
+          STATUS="${{ job.status == 'success' && 'done' || 'error' }}"
           curl -X POST "${{ github.event.inputs.webhook_url }}" \
             -H "Content-Type: application/json" \
             -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"ipa\",\"status\":\"${STATUS}\",\"run_id\":\"${{ github.run_id }}\"}"
 ```
 
-> **After creating these files**, go to your repo → **Settings → Actions → General** → set "Workflow permissions" to **Read and write**.
-
 ---
 
-### Step 2 — Cloudflare Worker API
+### cloudflare worker
 
-This Worker is the bridge between your frontend and GitHub Actions. It handles:
-- Receiving the uploaded ZIP
-- Storing it in R2
-- Triggering the correct GitHub Actions workflow
-- Receiving the webhook callback
-- Serving build status to the frontend
+same idea as the YallAnime worker. one Worker does everything: receives the zip, stores it in R2, fires off the right github actions workflow, handles the webhook callback, and serves the status to the frontend when it polls.
 
-#### Setup R2 Bucket
+**create the R2 bucket**
 
 ```bash
-# Login to Cloudflare
 wrangler login
-
-# Create the R2 bucket
 wrangler r2 bucket create yallexe-builds
 ```
 
-#### Create the Worker project
+**create the worker**
 
 ```bash
 mkdir yallexe-worker && cd yallexe-worker
 wrangler init --type javascript
 ```
 
-#### `wrangler.toml`
+**wrangler.toml**
 
 ```toml
 name = "yallexe-api"
@@ -546,162 +487,131 @@ GITHUB_OWNER = "yallcode"
 GITHUB_REPO = "YallEXE"
 ```
 
-#### Add secrets (run these in terminal)
+**add secrets**
+
+go to github, make a fine-grained personal access token with Actions (write) and Contents (read) permissions, then:
 
 ```bash
-# Your GitHub Personal Access Token
-# Go to: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained
-# Permissions needed: Actions (write), Contents (read)
 wrangler secret put GITHUB_TOKEN
-
-# A random string you invent — used to verify webhook calls from Actions
 wrangler secret put WEBHOOK_SECRET
 ```
 
-#### `src/index.js`
+**src/index.js**
 
 ```javascript
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    const { pathname } = url;
+    const url = new URL(request.url)
+    const path = url.pathname
 
-    // CORS headers for all responses
     const cors = {
       'Access-Control-Allow-Origin': 'https://yallcode.github.io',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
-    };
-
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: cors });
     }
 
-    // ── POST /build ───────────────────────────────────────────
-    // Receives: multipart/form-data with zip + config
-    // Returns:  { build_id }
-    if (pathname === '/build' && request.method === 'POST') {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: cors })
+    }
+
+    if (path === '/build' && request.method === 'POST') {
       try {
-        const form = await request.formData();
-        const zip = form.get('zip');           // File object
-        const platforms = form.get('platforms').split(','); // e.g. "apk,exe"
-        const appName = form.get('app_name') || 'YallApp';
-        const appVersion = form.get('app_version') || '1.0.0';
-        const bundleId = form.get('bundle_id') || 'com.yallexe.app';
+        const form = await request.formData()
+        const zip = form.get('zip')
+        const platforms = form.get('platforms').split(',')
+        const appName = form.get('app_name') || 'YallApp'
+        const appVersion = form.get('app_version') || '1.0.0'
+        const bundleId = form.get('bundle_id') || 'com.yallexe.app'
 
-        // Generate a unique build ID
-        const buildId = crypto.randomUUID();
+        const buildId = crypto.randomUUID()
 
-        // Store ZIP in R2
-        const zipKey = `builds/${buildId}/project.zip`;
-        await env.BUILDS.put(zipKey, zip.stream(), {
+        await env.BUILDS.put(`builds/${buildId}/project.zip`, zip.stream(), {
           httpMetadata: { contentType: 'application/zip' },
-        });
+        })
 
-        // Public URL for the ZIP (Workers R2 public bucket or presigned URL)
-        // For simplicity, we serve it via this worker at /file/:buildId
-        const zipUrl = `https://yallexe-api.yallcc-info.workers.dev/file/${buildId}`;
-        const webhookUrl = `https://yallexe-api.yallcc-info.workers.dev/webhook`;
-
-        // Initialise build status in KV (or use a D1 DB for more features)
-        const buildStatus = {};
-        platforms.forEach(p => { buildStatus[p] = 'queued'; });
-
+        const statusObj = {}
+        platforms.forEach(p => { statusObj[p] = 'queued' })
         await env.BUILDS.put(`status/${buildId}`, JSON.stringify({
           build_id: buildId,
           platforms,
-          status: buildStatus,
-          created_at: new Date().toISOString(),
+          status: statusObj,
           run_ids: {},
-        }));
+          created_at: new Date().toISOString(),
+        }))
 
-        // Trigger one GitHub Actions workflow per platform
+        const zipUrl = `https://yallexe-api.yallcc-info.workers.dev/file/${buildId}`
+        const webhookUrl = `https://yallexe-api.yallcc-info.workers.dev/webhook`
+
         const workflowMap = {
           apk: 'build-android.yml',
           exe: 'build-windows.yml',
           mac: 'build-mac.yml',
           ipa: 'build-ios.yml',
-        };
+        }
 
-        await Promise.all(platforms.map(platform => {
-          const workflow = workflowMap[platform];
-          if (!workflow) return;
-          return triggerWorkflow(env, workflow, {
+        await Promise.all(platforms.map(p => {
+          if (!workflowMap[p]) return
+          return triggerWorkflow(env, workflowMap[p], {
             build_id: buildId,
             zip_url: zipUrl,
             app_name: appName,
             app_version: appVersion,
             webhook_url: webhookUrl,
             bundle_id: bundleId,
-          });
-        }));
+          })
+        }))
 
         return new Response(JSON.stringify({ build_id: buildId }), {
           headers: { 'Content-Type': 'application/json', ...cors },
-        });
+        })
 
       } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), {
           status: 500,
           headers: { 'Content-Type': 'application/json', ...cors },
-        });
+        })
       }
     }
 
-    // ── GET /status/:buildId ──────────────────────────────────
-    // Polled by the frontend every 3 seconds
-    if (pathname.startsWith('/status/') && request.method === 'GET') {
-      const buildId = pathname.split('/')[2];
-      const raw = await env.BUILDS.get(`status/${buildId}`);
-      if (!raw) {
-        return new Response(JSON.stringify({ error: 'Not found' }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json', ...cors },
-        });
-      }
-      const data = JSON.parse(raw.text());
-      return new Response(raw.text(), {
+    if (path.startsWith('/file/') && request.method === 'GET') {
+      const buildId = path.split('/')[2]
+      const obj = await env.BUILDS.get(`builds/${buildId}/project.zip`)
+      if (!obj) return new Response('not found', { status: 404 })
+      return new Response(obj.body, { headers: { 'Content-Type': 'application/zip' } })
+    }
+
+    if (path.startsWith('/status/') && request.method === 'GET') {
+      const buildId = path.split('/')[2]
+      const obj = await env.BUILDS.get(`status/${buildId}`)
+      if (!obj) return new Response(JSON.stringify({ error: 'not found' }), {
+        status: 404,
         headers: { 'Content-Type': 'application/json', ...cors },
-      });
+      })
+      return new Response(await obj.text(), {
+        headers: { 'Content-Type': 'application/json', ...cors },
+      })
     }
 
-    // ── GET /file/:buildId ────────────────────────────────────
-    // Serves the stored ZIP back to GitHub Actions
-    if (pathname.startsWith('/file/') && request.method === 'GET') {
-      const buildId = pathname.split('/')[2];
-      const obj = await env.BUILDS.get(`builds/${buildId}/project.zip`);
-      if (!obj) return new Response('Not found', { status: 404 });
-      return new Response(obj.body, {
-        headers: { 'Content-Type': 'application/zip' },
-      });
+    if (path === '/webhook' && request.method === 'POST') {
+      const { build_id, platform, status, run_id } = await request.json()
+      const obj = await env.BUILDS.get(`status/${build_id}`)
+      if (!obj) return new Response('not found', { status: 404 })
+
+      const data = JSON.parse(await obj.text())
+      data.status[platform] = status
+      data.run_ids[platform] = run_id
+
+      const allDone = Object.values(data.status).every(s => s === 'done' || s === 'error')
+      if (allDone) data.finished_at = new Date().toISOString()
+
+      await env.BUILDS.put(`status/${build_id}`, JSON.stringify(data))
+      return new Response('ok')
     }
 
-    // ── POST /webhook ─────────────────────────────────────────
-    // Called by GitHub Actions when a build finishes
-    if (pathname === '/webhook' && request.method === 'POST') {
-      const payload = await request.json();
-      const { build_id, platform, status, run_id } = payload;
-
-      const raw = await env.BUILDS.get(`status/${build_id}`);
-      if (!raw) return new Response('Not found', { status: 404 });
-
-      const data = JSON.parse(raw.text());
-      data.status[platform] = status;
-      data.run_ids[platform] = run_id;
-
-      // Check if all platforms are done
-      const allDone = Object.values(data.status).every(s => s === 'done' || s === 'error');
-      if (allDone) data.finished_at = new Date().toISOString();
-
-      await env.BUILDS.put(`status/${build_id}`, JSON.stringify(data));
-      return new Response('OK');
-    }
-
-    return new Response('YallEXE API v2', { headers: cors });
+    return new Response('YallEXE API', { headers: cors })
   },
-};
+}
 
-// ── Helper: trigger a GitHub Actions workflow ─────────────────
 async function triggerWorkflow(env, workflow, inputs) {
   const res = await fetch(
     `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/actions/workflows/${workflow}/dispatches`,
@@ -711,223 +621,176 @@ async function triggerWorkflow(env, workflow, inputs) {
         Authorization: `Bearer ${env.GITHUB_TOKEN}`,
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',
-        'User-Agent': 'YallEXE-Worker/2.0',
+        'User-Agent': 'YallEXE/2.0',
       },
-      body: JSON.stringify({
-        ref: 'main',
-        inputs,
-      }),
+      body: JSON.stringify({ ref: 'main', inputs }),
     }
-  );
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`GitHub API error (${res.status}): ${text}`);
-  }
+  )
+  if (!res.ok) throw new Error(`github api ${res.status}: ${await res.text()}`)
 }
 ```
 
-#### Deploy the Worker
+**deploy it**
 
 ```bash
 wrangler deploy
 ```
 
-Your API will be live at:
-```
-https://yallexe-api.YOUR_SUBDOMAIN.workers.dev
-```
-
 ---
 
-### Step 3 — Connect the Frontend
+### connecting the frontend
 
-Replace the mock `startBuild()` function in `index.html` with this real implementation:
+replace the fake `startBuild()` in index.html with this real version. it uploads to the worker, gets a build_id back, then polls every 3 seconds.
 
 ```javascript
-const WORKER_URL = 'https://yallexe-api.yallcc-info.workers.dev';
-let pollInterval = null;
+const WORKER_URL = 'https://yallexe-api.yallcc-info.workers.dev'
+let pollInterval = null
 
 async function startBuild() {
-  if (state.buildRunning || !state.file || state.platforms.size === 0) return;
+  if (state.buildRunning || !state.file || state.platforms.size === 0) return
 
-  state.buildRunning = true;
-  buildBtn.disabled = true;
-  buildPanel.classList.remove('hidden');
-  setStatus('running');
-  buildBtn.innerHTML = `<div class="spinner"></div> Uploading...`;
+  state.buildRunning = true
+  buildBtn.disabled = true
+  buildPanel.classList.remove('hidden')
+  setStatus('running')
+  buildBtn.innerHTML = `<div class="spinner"></div> Uploading...`
 
   try {
-    // Build form data
-    const form = new FormData();
-    form.append('zip', state.file);
-    form.append('platforms', [...state.platforms].join(','));
-    form.append('app_name', document.getElementById('global-app-name').value || 'YallApp');
-    form.append('app_version', document.getElementById('global-version').value || '1.0.0');
-    form.append('bundle_id', document.getElementById('bundle-id')?.value || 'com.yallexe.app');
+    const form = new FormData()
+    form.append('zip', state.file)
+    form.append('platforms', [...state.platforms].join(','))
+    form.append('app_name', document.getElementById('global-app-name').value || 'YallApp')
+    form.append('app_version', document.getElementById('global-version').value || '1.0.0')
+    form.append('bundle_id', document.getElementById('bundle-id')?.value || 'com.yallexe.app')
 
-    log('› Uploading project to YallEXE servers...', 'log-info');
+    log('uploading project...', 'log-info')
 
-    const res = await fetch(`${WORKER_URL}/build`, {
-      method: 'POST',
-      body: form,
-    });
+    const res = await fetch(`${WORKER_URL}/build`, { method: 'POST', body: form })
+    if (!res.ok) throw new Error(`server error ${res.status}`)
 
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const { build_id } = await res.json()
+    log(`build queued, id: ${build_id}`, 'log-success')
+    log('waiting for github actions to pick it up...', 'log-info')
+    buildBtn.innerHTML = `<div class="spinner"></div> Building...`
 
-    const { build_id } = await res.json();
-    log(`✓ Build queued — ID: ${build_id}`, 'log-success');
-    log('› Waiting for GitHub Actions runners...', 'log-info');
-
-    buildBtn.innerHTML = `<div class="spinner"></div> Building…`;
-
-    // Poll for status
     pollInterval = setInterval(async () => {
-      const statusRes = await fetch(`${WORKER_URL}/status/${build_id}`);
-      if (!statusRes.ok) return;
+      try {
+        const statusRes = await fetch(`${WORKER_URL}/status/${build_id}`)
+        if (!statusRes.ok) return
+        const data = await statusRes.json()
 
-      const data = await statusRes.json();
+        Object.entries(data.status).forEach(([platform, status]) => {
+          const fill = document.getElementById(`plat-fill-${platform}`)
+          const pct = document.getElementById(`plat-pct-${platform}`)
+          const lbl = document.getElementById(`plat-status-${platform}`)
+          if (status === 'done') {
+            if (fill) fill.style.width = '100%'
+            if (pct) pct.textContent = '100%'
+            if (lbl) { lbl.textContent = 'done'; lbl.style.color = '#00d4aa' }
+            log(`${platform} build done`, 'log-success')
+          } else if (status === 'error') {
+            if (lbl) { lbl.textContent = 'error'; lbl.style.color = '#ff4d4d' }
+            log(`${platform} build failed`, 'log-error')
+          }
+        })
 
-      // Update per-platform progress
-      Object.entries(data.status).forEach(([platform, status]) => {
-        const fill = document.getElementById(`plat-fill-${platform}`);
-        const pct  = document.getElementById(`plat-pct-${platform}`);
-        const lbl  = document.getElementById(`plat-status-${platform}`);
-
-        if (status === 'done') {
-          if (fill) fill.style.width = '100%';
-          if (pct)  pct.textContent = '100%';
-          if (lbl)  { lbl.textContent = '✓ done'; lbl.style.color = '#00d4aa'; }
-          log(`✓ ${platform.toUpperCase()} build complete`, 'log-success');
-        } else if (status === 'error') {
-          if (lbl) { lbl.textContent = '✗ error'; lbl.style.color = '#ff4d4d'; }
-          log(`✗ ${platform.toUpperCase()} build failed`, 'log-error');
+        const allDone = Object.values(data.status).every(s => s === 'done' || s === 'error')
+        if (allDone) {
+          clearInterval(pollInterval)
+          progressFill.style.width = '100%'
+          setStatus('done')
+          log('all done', 'log-success')
+          state.buildRunning = false
+          buildBtn.disabled = false
+          buildBtn.innerHTML = 'Build Again'
+          showDownloadLinks(data)
         }
-      });
-
-      // Check if all done
-      const allFinished = Object.values(data.status).every(
-        s => s === 'done' || s === 'error'
-      );
-
-      if (allFinished) {
-        clearInterval(pollInterval);
-        progressFill.style.width = '100%';
-        setStatus('done');
-        log('✓ All builds finished!', 'log-success');
-        state.buildRunning = false;
-        buildBtn.disabled = false;
-        buildBtn.innerHTML = `↻ Build Again`;
-
-        // Show real GitHub Actions download links
-        showDownloadLinks(data);
+      } catch (e) {
+        // network blip, try again next tick
       }
-    }, 3000);
+    }, 3000)
 
   } catch (err) {
-    log(`✗ Error: ${err.message}`, 'log-error');
-    setStatus('error');
-    state.buildRunning = false;
-    buildBtn.disabled = false;
-    buildBtn.innerHTML = `↻ Retry`;
+    log(`error: ${err.message}`, 'log-error')
+    setStatus('error')
+    state.buildRunning = false
+    buildBtn.disabled = false
+    buildBtn.innerHTML = 'Retry'
   }
 }
 
 function showDownloadLinks(data) {
-  downloadsSection.classList.remove('hidden');
-  const labels = { apk: 'Android APK', exe: 'Windows EXE', mac: 'macOS DMG', ipa: 'iOS IPA' };
-  const exts   = { apk: '.apk', exe: '.exe', mac: '.dmg', ipa: '.ipa' };
+  downloadsSection.classList.remove('hidden')
+  const labels = { apk: 'Android APK', exe: 'Windows EXE', mac: 'macOS DMG', ipa: 'iOS IPA' }
+  const exts = { apk: '.apk', exe: '.exe', mac: '.dmg', ipa: '.ipa' }
+  const name = document.getElementById('global-app-name').value || 'YallApp'
 
   Object.entries(data.run_ids).forEach(([platform, runId]) => {
-    const name = document.getElementById('global-app-name').value || 'YallApp';
-    const card = document.createElement('div');
-    card.className = 'dl-card flex items-center justify-between px-4 py-3';
+    const card = document.createElement('div')
+    card.className = 'dl-card flex items-center justify-between px-4 py-3'
     card.innerHTML = `
       <div>
         <p class="text-sm font-display font-600 text-gray-200">${name}${exts[platform]}</p>
         <p class="text-xs font-mono text-gray-600">${labels[platform]}</p>
       </div>
-      <a href="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}"
+      <a href="https://github.com/yallcode/YallEXE/actions/runs/${runId}"
          target="_blank"
          class="text-xs font-mono text-brand-teal border border-brand-teal/30 px-3 py-1.5 rounded-md hover:bg-brand-teal/10 transition-colors">
-        View on Actions ↗
+        view artifact
       </a>
-    `;
-    downloadsGrid.appendChild(card);
-  });
+    `
+    downloadsGrid.appendChild(card)
+  })
 }
 ```
 
 ---
 
-## iOS Code Signing Guide
+## ios signing
 
-iOS is the hardest platform. Here's what each field in YallEXE's iOS Advanced Settings means:
+ios is the painful one. here is what each field in the iOS Advanced Settings panel actually means and where to get it.
 
-| Field | What it is | Where to get it |
-|-------|-----------|-----------------|
-| Provisioning Profile | Links your app to allowed devices/distribution method | Apple Developer Portal → Certificates, IDs & Profiles |
-| Certificate (.p12) | Your signing identity (exported from Keychain Access) | Keychain Access → Export as .p12 |
-| Certificate Password | The password you set when exporting | You set this on export |
-| Bundle ID | Your app's unique identifier | Apple Developer Portal → Identifiers |
-| Team ID | Your Apple Developer Team | developer.apple.com → Account → Membership |
+**provisioning profile (.mobileprovision)** — links your app to allowed devices and a distribution method. get it from the apple developer portal under Certificates, IDs and Profiles. for device testing pick Ad-Hoc, for app store pick App Store Distribution.
 
-**For testing (Ad-Hoc distribution):**
-1. Register your test device UDIDs in the Developer Portal
-2. Create an Ad-Hoc provisioning profile
-3. Export your certificate as `.p12` from Keychain Access
-4. Upload both into YallEXE → iOS Advanced Settings
+**certificate (.p12)** — your signing identity. on a mac open Keychain Access, find your Apple Distribution certificate, right click it and export as .p12. set a password when it asks.
 
-**For App Store distribution**, you need a Distribution certificate and an App Store provisioning profile. This requires an active Apple Developer Program membership ($99/year).
+**bundle identifier** — a unique ID like com.yallcode.myapp. has to match what you registered in the developer portal under Identifiers.
+
+**team ID** — find it at developer.apple.com under Account then Membership Details.
+
+the build-ios.yml right now produces an unsigned IPA which you can sideload with [Sideloadly](https://sideloadly.io) or [AltStore](https://altstore.io) for personal testing without needing a paid account. if you want proper distribution you need the $99/year Apple Developer membership.
 
 ---
 
-## Deploying to GitHub Pages
+## github pages
 
-The frontend auto-deploys via GitHub Pages since `index.html` is in the repo root.
+the site deploys from the main branch automatically. if pages is not set up yet go to repo Settings, click Pages, set source to Deploy from a branch, pick main and root, save. it goes live at `https://yallcode.github.io/YallEXE/` in about a minute.
 
-To enable it:
-1. Go to your repo → **Settings → Pages**
-2. Source: **Deploy from a branch**
-3. Branch: **main** / root
-4. Save → your site is live at `https://yallcode.github.io/YallEXE/`
+for a custom domain create a file called `CNAME` in the repo root:
 
-To add a custom domain later, create a `CNAME` file in the repo root:
 ```
-yallexe.yallcc-info.com
+yallexe.com
 ```
 
 ---
 
-## Roadmap
+## roadmap
 
-- [x] Frontend UI (drag & drop, platform selector, console log)
-- [x] iOS Advanced Settings (certificates, provisioning, Bundle ID)
-- [x] Live on GitHub Pages
-- [ ] Cloudflare Worker API
-- [ ] GitHub Actions — Android (Capacitor + Gradle)
-- [ ] GitHub Actions — Windows (Electron + NSIS)
-- [ ] GitHub Actions — macOS (Electron + DMG)
-- [ ] GitHub Actions — iOS (Capacitor + Xcode)
-- [ ] Real-time WebSocket build log streaming
-- [ ] Build history page
-- [ ] Custom app icon injection
-- [ ] Release signing (production certificates)
-
----
-
-## Credits
-
-Built by **[YallCode](https://yallcode.github.io/YallaYCode/)**
-
-- 🌐 Site: [yallcode.github.io/YallaYCode](https://yallcode.github.io/YallaYCode/)
-- 🐙 GitHub: [@yallcode](https://github.com/yallcode)
-- 🐦 X/Twitter: [@YallCode](https://twitter.com/YallCode)
-- 📺 YouTube: [@YallaYCode](https://youtube.com/@YallaYCode)
-- 💬 Discord: [discord.gg/yUe8kE5fRF](https://discord.gg/yUe8kE5fRF)
+- [x] frontend ui
+- [x] ios advanced settings
+- [x] live on github pages
+- [ ] cloudflare worker api
+- [ ] android build (capacitor + gradle)
+- [ ] windows build (electron + nsis)
+- [ ] macos build (electron + dmg)
+- [ ] ios build (capacitor + xcode)
+- [ ] websocket log streaming
+- [ ] build history page
+- [ ] custom icon injection
+- [ ] production signing support
 
 ---
 
-<div align="center">
-<sub>YallEXE v2.0.0-beta · HTML → Native · MIT License</sub>
-</div>
+built by [YallCode](https://yallcode.github.io/YallaYCode/)
+
+[github](https://github.com/yallcode) · [twitter](https://twitter.com/YallCode) · [youtube](https://youtube.com/@YallaYCode) · [discord](https://discord.gg/yUe8kE5fRF)
