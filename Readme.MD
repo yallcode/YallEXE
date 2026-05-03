@@ -117,6 +117,10 @@ on:
       webhook_url:
         required: true
         type: string
+      min_os:
+        required: false
+        type: string
+        default: '21'
 
 jobs:
   build:
@@ -152,6 +156,16 @@ jobs:
             --web-dir .
           npx cap add android
           npx cap sync android
+
+      - name: set min SDK version
+        run: |
+          MIN_SDK="${{ github.event.inputs.min_os }}"
+          MIN_SDK="${MIN_SDK:-21}"
+          # strip non-numeric (user might type "Android 8+" or just "26")
+          MIN_SDK=$(echo "$MIN_SDK" | grep -o '[0-9]*' | head -1)
+          MIN_SDK="${MIN_SDK:-21}"
+          sed -i "s/minSdkVersion [0-9]*/minSdkVersion ${MIN_SDK}/" project/android/app/build.gradle
+          echo "set minSdkVersion to ${MIN_SDK}"
 
       - name: build apk
         run: |
@@ -395,6 +409,10 @@ on:
         required: false
         type: string
         default: 'com.yallexe.app'
+      min_os:
+        required: false
+        type: string
+        default: '14'
 
 jobs:
   build:
@@ -425,12 +443,16 @@ jobs:
 
       - name: build ipa unsigned
         run: |
+          MIN_IOS="${{ github.event.inputs.min_os }}"
+          MIN_IOS=$(echo "$MIN_IOS" | grep -o '[0-9]*\(\.[0-9]*\)\?' | head -1)
+          MIN_IOS="${MIN_IOS:-14}"
           cd project/ios/App
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
+            IPHONEOS_DEPLOYMENT_TARGET="$MIN_IOS" \
             archive \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
@@ -455,7 +477,7 @@ jobs:
 
 ### cloudflare worker
 
-Same as what i used for YallAnime. One Worker does everything: receives the zip, stores it in R2, fires off the right github actions workflow, handles the webhook callback, and serves the status to the frontend when it polls.
+same idea as the YallAnime worker. one Worker does everything: receives the zip, stores it in R2, fires off the right github actions workflow, handles the webhook callback, and serves the status to the frontend when it polls.
 
 **create the R2 bucket**
 
@@ -522,6 +544,7 @@ export default {
         const appName = form.get('app_name') || 'YallApp'
         const appVersion = form.get('app_version') || '1.0.0'
         const bundleId = form.get('bundle_id') || 'com.yallexe.app'
+        const minOs = form.get('min_os') || ''
 
         const buildId = crypto.randomUUID()
 
@@ -558,6 +581,7 @@ export default {
             app_version: appVersion,
             webhook_url: webhookUrl,
             bundle_id: bundleId,
+            min_os: minOs,
           })
         }))
 
@@ -662,6 +686,7 @@ async function startBuild() {
     form.append('app_name', document.getElementById('global-app-name').value || 'YallApp')
     form.append('app_version', document.getElementById('global-version').value || '1.0.0')
     form.append('bundle_id', document.getElementById('bundle-id')?.value || 'com.yallexe.app')
+    form.append('min_os', document.getElementById('min-os').value || '')
 
     log('uploading project...', 'log-info')
 
