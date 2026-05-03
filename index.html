@@ -1048,6 +1048,7 @@
     const platforms = [...state.platforms];
     const appName   = document.getElementById('global-app-name').value.trim() || 'YallApp';
     const version   = document.getElementById('global-version').value.trim() || '1.0.0';
+    const minOs     = document.getElementById('min-os').value.trim() || '';
 
     const platformMeta = {
       apk: { label: 'Android APK', ext: '.apk',  color: '#22c55e', steps: buildSteps.android },
@@ -1081,6 +1082,7 @@
     log('// ─────────────────────────────────────────────────', 'log-dim', t);
     log(`//  ${new Date().toLocaleTimeString()}  |  ${state.file.name}  |  ${appName} v${version}`, 'log-dim', t += 20);
     log(`//  targets: ${platforms.map(p => platformMeta[p].label).join(', ')}`, 'log-dim', t += 20);
+    if (minOs) log(`//  min OS: ${minOs}`, 'log-dim', t += 20);
     log('// ─────────────────────────────────────────────────', 'log-dim', t += 20);
 
     t += 300;
