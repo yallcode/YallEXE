@@ -1,0 +1,81 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        required: true
+        type: string
+      zip_url:
+        required: true
+        type: string
+      app_name:
+        required: true
+        type: string
+      app_version:
+        required: true
+        type: string
+      webhook_url:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: setup java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: install capacitor
+        run: npm install -g @capacitor/cli
+
+      - name: download zip
+        run: |
+          curl -L "${{ github.event.inputs.zip_url }}" -o project.zip
+          mkdir project && cd project && unzip ../project.zip
+
+      - name: setup capacitor android
+        run: |
+          cd project
+          npm init -y
+          npm install @capacitor/core @capacitor/android
+          npx cap init "${{ github.event.inputs.app_name }}" \
+            "com.yallexe.$(echo ${{ github.event.inputs.app_name }} | tr '[:upper:]' '[:lower:]' | tr -d ' ')" \
+            --web-dir .
+          npx cap add android
+          npx cap sync android
+
+      - name: build apk
+        run: |
+          cd project/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-apk-${{ github.event.inputs.build_id }}
+          path: project/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: notify webhook on success
+        if: success()
+        run: |
+          curl -X POST "${{ github.event.inputs.webhook_url }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"apk\",\"status\":\"done\",\"run_id\":\"${{ github.run_id }}\"}"
+
+      - name: notify webhook on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ github.event.inputs.webhook_url }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"apk\",\"status\":\"error\"}"
