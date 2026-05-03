@@ -1,0 +1,84 @@
+name: Build macOS DMG
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        required: true
+        type: string
+      zip_url:
+        required: true
+        type: string
+      app_name:
+        required: true
+        type: string
+      app_version:
+        required: true
+        type: string
+      webhook_url:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: download and setup project
+        run: |
+          curl -L "${{ github.event.inputs.zip_url }}" -o project.zip
+          mkdir project && cd project && unzip ../project.zip
+
+          cat > package.json << EOF
+          {
+            "name": "${{ github.event.inputs.app_name }}",
+            "version": "${{ github.event.inputs.app_version }}",
+            "main": "main.js",
+            "scripts": { "build": "electron-builder --mac" },
+            "build": {
+              "appId": "com.yallexe.app",
+              "productName": "${{ github.event.inputs.app_name }}",
+              "mac": { "target": "dmg" },
+              "directories": { "output": "dist" }
+            }
+          }
+          EOF
+
+          cat > main.js << 'EOF'
+          const { app, BrowserWindow } = require('electron')
+          function createWindow() {
+            const win = new BrowserWindow({ width: 1200, height: 800 })
+            win.loadFile('index.html')
+          }
+          app.whenReady().then(createWindow)
+          EOF
+
+          npm install electron electron-builder --save-dev
+
+      - name: build dmg
+        run: cd project && npm run build
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mac-dmg-${{ github.event.inputs.build_id }}
+          path: project/dist/*.dmg
+
+      - name: notify webhook on success
+        if: success()
+        run: |
+          curl -X POST "${{ github.event.inputs.webhook_url }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"mac\",\"status\":\"done\",\"run_id\":\"${{ github.run_id }}\"}"
+
+      - name: notify webhook on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ github.event.inputs.webhook_url }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"build_id\":\"${{ github.event.inputs.build_id }}\",\"platform\":\"mac\",\"status\":\"error\"}"
