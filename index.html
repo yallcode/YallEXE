@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YallEXE — HTML to Native Apps</title>
+  <title>YallEXE | HTML to Native Apps</title>
   <link rel="icon" href="icon.png" type="image/png" />
 
   <!-- Fonts -->
@@ -554,19 +554,19 @@
 
     <!-- Sub -->
     <p class="fade-up-3 text-gray-400 text-base sm:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-mono">
-      Drop a zipped HTML project. Choose your targets.<br />
-      Get a native <span class="text-brand-orange">APK</span>, <span class="text-brand-teal">EXE</span>, <span class="text-gray-300">Mac App</span>, or <span class="text-gray-300">IPA</span> — built in seconds.
+      zip your html project, pick what you want to build,<br />
+      get a real <span class="text-brand-orange">APK</span>, <span class="text-brand-teal">EXE</span>, <span class="text-gray-300">Mac app</span> or <span class="text-gray-300">IPA</span> back.
     </p>
 
     <!-- CTA -->
     <div class="fade-up-4 flex flex-col sm:flex-row items-center justify-center gap-3">
       <a href="#converter"
          class="bg-brand-orange text-black font-display font-700 text-sm px-7 py-3 rounded-lg hover:shadow-[0_0_30px_rgba(255,107,53,0.4)] transition-all duration-200 hover:-translate-y-0.5">
-        Start Building ↓
+        let's go ↓
       </a>
       <a href="#how-it-works"
          class="text-gray-500 font-mono text-sm px-5 py-3 rounded-lg border border-gray-800 hover:border-gray-600 hover:text-gray-300 transition-all duration-200">
-        How it works
+        how it works
       </a>
     </div>
 
@@ -596,22 +596,22 @@
   ═══════════════════════════════════════════════════════ -->
   <section id="how-it-works" class="relative z-10 py-16 px-6 max-w-5xl mx-auto">
     <p class="section-label text-center mb-3">// process</p>
-    <h2 class="font-display font-700 text-3xl text-center mb-10">Three steps to native</h2>
+    <h2 class="font-display font-700 text-3xl text-center mb-10">how it works</h2>
     <div class="grid sm:grid-cols-3 gap-4">
       <div class="card p-6">
         <div class="w-9 h-9 rounded-lg bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center text-brand-orange font-mono font-700 text-sm mb-4">01</div>
         <h3 class="font-display font-600 text-base mb-2">Upload ZIP</h3>
-        <p class="text-gray-500 text-sm font-mono leading-relaxed">Drop your HTML project — <code class="text-gray-400">index.html</code>, assets, JS, CSS — all bundled in a <code class="text-gray-400">.zip</code> file.</p>
+        <p class="text-gray-500 text-sm font-mono leading-relaxed">zip your whole project folder, <code class="text-gray-400">index.html</code> and all. just make sure the html file is at the root.</p>
       </div>
       <div class="card p-6">
         <div class="w-9 h-9 rounded-lg bg-brand-teal/10 border border-brand-teal/20 flex items-center justify-center text-brand-teal font-mono font-700 text-sm mb-4">02</div>
-        <h3 class="font-display font-600 text-base mb-2">Pick Targets</h3>
-        <p class="text-gray-500 text-sm font-mono leading-relaxed">Choose one or more output platforms: Android APK, Windows EXE, Mac App, or iOS IPA.</p>
+        <h3 class="font-display font-600 text-base mb-2">Pick platforms</h3>
+        <p class="text-gray-500 text-sm font-mono leading-relaxed">tap whichever ones you want. android, windows, mac, ios. you can pick all four at once.</p>
       </div>
       <div class="card p-6">
         <div class="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 font-mono font-700 text-sm mb-4">03</div>
         <h3 class="font-display font-600 text-base mb-2">Download</h3>
-        <p class="text-gray-500 text-sm font-mono leading-relaxed">Watch the build log in real-time and download your compiled native apps when they're ready.</p>
+        <p class="text-gray-500 text-sm font-mono leading-relaxed">watch the build log, grab the files when it's done. that's it.</p>
       </div>
     </div>
   </section>
@@ -621,13 +621,13 @@
   ═══════════════════════════════════════════════════════ -->
   <section id="converter" class="relative z-10 py-10 px-6 max-w-3xl mx-auto">
     <p class="section-label text-center mb-3">// converter</p>
-    <h2 class="font-display font-700 text-3xl text-center mb-10">Build your app</h2>
+    <h2 class="font-display font-700 text-3xl text-center mb-10">build something</h2>
 
     <!-- ── Step 1: Upload ──────────────────────────────────── -->
     <div class="mb-5">
       <div class="flex items-center gap-2 mb-3">
         <span class="section-label">step_01</span>
-        <span class="text-gray-600 font-mono text-xs">— upload your project</span>
+        <span class="text-gray-600 font-mono text-xs">/ upload your project zip</span>
       </div>
 
       <div id="drop-zone"
@@ -645,11 +645,11 @@
         </div>
         <div>
           <p class="text-gray-300 font-display font-600 text-sm" id="drop-main-text">
-            Drop your <code class="text-brand-orange font-mono">.zip</code> project here
+            drop your <code class="text-brand-orange font-mono">.zip</code> here
           </p>
-          <p class="text-gray-600 font-mono text-xs mt-1" id="drop-sub-text">or click to browse files</p>
+          <p class="text-gray-600 font-mono text-xs mt-1" id="drop-sub-text">or just click to pick a file</p>
         </div>
-        <div class="font-mono text-xs text-gray-700 mt-1">Max 50 MB · ZIP only</div>
+        <div class="font-mono text-xs text-gray-700 mt-1">.zip only · max 50mb</div>
       </div>
       <input type="file" id="file-input" accept=".zip" class="hidden" />
     </div>
@@ -658,7 +658,7 @@
     <div class="mb-5">
       <div class="flex items-center gap-2 mb-3">
         <span class="section-label">step_02</span>
-        <span class="text-gray-600 font-mono text-xs">— select output platforms</span>
+        <span class="text-gray-600 font-mono text-xs">/ pick what to build</span>
       </div>
 
       <div class="platforms-grid grid grid-cols-4 gap-3">
@@ -726,8 +726,8 @@
               class="w-full flex items-center justify-between px-4 py-3 bg-[#0e0e0e] border border-[#252525] rounded-lg text-sm font-mono text-gray-400 hover:border-[#ff6b35] hover:text-brand-orange transition-all duration-200">
         <span class="flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          iOS Advanced Settings
-          <span class="text-[10px] font-mono bg-yellow-900/40 text-yellow-400 border border-yellow-800/40 rounded px-1.5 py-0.5 ml-1">Required for IPA signing</span>
+          iOS signing setup
+          <span class="text-[10px] font-mono bg-yellow-900/40 text-yellow-400 border border-yellow-800/40 rounded px-1.5 py-0.5 ml-1">needed for IPA</span>
         </span>
         <svg id="ios-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
@@ -737,8 +737,8 @@
         <!-- YallEXE handles signing toggle -->
         <div class="flex items-center justify-between mb-4 py-3 border-b border-[#1a1a1a]">
           <div>
-            <p class="text-sm font-display font-600 text-gray-200">YallEXE handles signing</p>
-            <p class="text-xs font-mono text-gray-600 mt-0.5">We sign your IPA using our shared developer certificate (Ad-Hoc). Disable to provide your own.</p>
+            <p class="text-sm font-display font-600 text-gray-200">sign it for me</p>
+            <p class="text-xs font-mono text-gray-600 mt-0.5">we use a shared ad-hoc cert to sign the IPA. turn this off if you have your own.</p>
           </div>
           <div class="toggle-track on ml-4" id="signing-toggle" onclick="toggleSigning()">
             <div class="toggle-thumb"></div>
@@ -747,12 +747,12 @@
 
         <!-- Manual signing fields -->
         <div id="manual-signing" style="display:none;">
-          <p class="section-label mb-3">manual signing credentials</p>
+          <p class="section-label mb-3">your certs</p>
 
           <div class="grid sm:grid-cols-2 gap-3 mb-3">
             <!-- Provisioning Profile -->
             <div>
-              <label class="text-xs font-mono text-gray-500 mb-1.5 block">Provisioning Profile (.mobileprovision)</label>
+              <label class="text-xs font-mono text-gray-500 mb-1.5 block">provisioning profile (.mobileprovision)</label>
               <div class="cert-upload" id="provision-drop" onclick="document.getElementById('provision-input').click()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-1.5 opacity-50"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span id="provision-text">Click or drop .mobileprovision</span>
@@ -762,7 +762,7 @@
 
             <!-- P12 Certificate -->
             <div>
-              <label class="text-xs font-mono text-gray-500 mb-1.5 block">Certificate (.p12)</label>
+              <label class="text-xs font-mono text-gray-500 mb-1.5 block">certificate (.p12)</label>
               <div class="cert-upload" id="cert-drop" onclick="document.getElementById('cert-input').click()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-1.5 opacity-50"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 <span id="cert-text">Click or drop .p12 certificate</span>
@@ -773,19 +773,19 @@
 
           <!-- Password -->
           <div class="mb-3">
-            <label class="text-xs font-mono text-gray-500 mb-1.5 block">Certificate Password</label>
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">cert password</label>
             <input type="password" class="field" placeholder="Certificate export password..." id="cert-password" />
           </div>
 
           <!-- Bundle ID -->
           <div class="mb-3">
-            <label class="text-xs font-mono text-gray-500 mb-1.5 block">Bundle Identifier</label>
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">bundle id</label>
             <input type="text" class="field" placeholder="com.yourname.appname" id="bundle-id" />
           </div>
 
           <!-- Team ID -->
           <div class="mb-4">
-            <label class="text-xs font-mono text-gray-500 mb-1.5 block">Apple Team ID</label>
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">apple team id</label>
             <input type="text" class="field" placeholder="XXXXXXXXXX" id="team-id" />
           </div>
         </div>
@@ -793,11 +793,11 @@
         <!-- App name + version (always shown) -->
         <div class="grid sm:grid-cols-2 gap-3 pb-3">
           <div>
-            <label class="text-xs font-mono text-gray-500 mb-1.5 block">App Display Name</label>
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">app name</label>
             <input type="text" class="field" placeholder="My App" id="app-name" />
           </div>
           <div>
-            <label class="text-xs font-mono text-gray-500 mb-1.5 block">Version String</label>
+            <label class="text-xs font-mono text-gray-500 mb-1.5 block">version</label>
             <input type="text" class="field" placeholder="1.0.0" id="app-version" value="1.0.0" />
           </div>
         </div>
@@ -806,25 +806,25 @@
 
     <!-- ── App metadata ────────────────────────────────────── -->
     <div class="card p-4 mb-5">
-      <p class="section-label mb-3">app_metadata</p>
+      <p class="section-label mb-3">app info</p>
       <div class="grid sm:grid-cols-2 gap-3">
         <div>
-          <label class="text-xs font-mono text-gray-500 mb-1.5 block">App Name</label>
+          <label class="text-xs font-mono text-gray-500 mb-1.5 block">app name</label>
           <input type="text" class="field" placeholder="My Awesome App" id="global-app-name" />
         </div>
         <div>
-          <label class="text-xs font-mono text-gray-500 mb-1.5 block">Version</label>
+          <label class="text-xs font-mono text-gray-500 mb-1.5 block">version</label>
           <input type="text" class="field" placeholder="1.0.0" id="global-version" value="1.0.0" />
         </div>
         <div>
-          <label class="text-xs font-mono text-gray-500 mb-1.5 block">Icon (512×512 PNG)</label>
+          <label class="text-xs font-mono text-gray-500 mb-1.5 block">icon (512x512 png)</label>
           <div class="cert-upload" onclick="document.getElementById('icon-input').click()">
             <span id="icon-text">Click to upload icon</span>
           </div>
           <input type="file" id="icon-input" accept=".png" class="hidden" />
         </div>
         <div>
-          <label class="text-xs font-mono text-gray-500 mb-1.5 block">Min OS / Target API</label>
+          <label class="text-xs font-mono text-gray-500 mb-1.5 block">min OS target</label>
           <input type="text" class="field" placeholder="Android 8+ / iOS 14+" id="min-os" />
         </div>
       </div>
@@ -833,7 +833,7 @@
     <!-- ── Build button ────────────────────────────────────── -->
     <button id="build-btn" disabled class="w-full py-4 flex items-center justify-center gap-2.5" onclick="startBuild()">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      Compile to Native
+      compile it
     </button>
 
     <!-- ── Build panel ─────────────────────────────────────── -->
@@ -857,13 +857,13 @@
 
       <!-- Console -->
       <div id="console-log">
-        <div class="log-dim">// YallEXE Build Console</div>
-        <div class="log-dim">// Waiting for build to start...</div>
+        <div class="log-dim">// build console</div>
+        <div class="log-dim">// waiting...</div>
       </div>
 
       <!-- Downloads (shown after build) -->
       <div id="downloads-section" class="hidden mt-4">
-        <p class="section-label mb-3">// downloads ready</p>
+        <p class="section-label mb-3">// done, grab your files</p>
         <div id="downloads-grid" class="grid gap-2"></div>
       </div>
     </div>
@@ -1079,21 +1079,20 @@
     let t = 0;
 
     log('// ─────────────────────────────────────────────────', 'log-dim', t);
-    log(`// YallEXE Build  ·  ${new Date().toLocaleTimeString()}`, 'log-dim', t += 20);
-    log(`// Project: ${state.file.name}   App: ${appName} v${version}`, 'log-dim', t += 20);
-    log(`// Targets: ${platforms.map(p => platformMeta[p].label).join(', ')}`, 'log-dim', t += 20);
+    log(`//  ${new Date().toLocaleTimeString()}  |  ${state.file.name}  |  ${appName} v${version}`, 'log-dim', t += 20);
+    log(`//  targets: ${platforms.map(p => platformMeta[p].label).join(', ')}`, 'log-dim', t += 20);
     log('// ─────────────────────────────────────────────────', 'log-dim', t += 20);
 
     t += 300;
-    log('› Extracting project archive...', 'log-info', t);
+    log('unpacking zip...', 'log-info', t);
     t += 600;
-    log('✓ index.html found — entry point confirmed', 'log-success', t);
+    log('found index.html', 'log-success', t);
     t += 200;
-    log(`✓ ${Math.floor(Math.random()*8)+3} assets catalogued (JS, CSS, images)`, 'log-success', t);
+    log(`found ${Math.floor(Math.random()*8)+3} other files (js, css, images)`, 'log-success', t);
     t += 400;
-    log('› Validating HTML structure...', 'log-info', t);
+    log('checking html...', 'log-info', t);
     t += 500;
-    log('✓ No critical errors detected', 'log-success', t);
+    log('looks good', 'log-success', t);
 
     let overallTotal = 0;
     let overallDone  = 0;
@@ -1111,7 +1110,7 @@
       let localT = offset;
       let accum  = 0;
 
-      log(`\n[${meta.label}] Starting build...`, 'log-step', localT);
+      log(`\n[${meta.label}] starting...`, 'log-step', localT);
       localT += 200;
 
       steps.forEach((step, i) => {
@@ -1157,7 +1156,7 @@
         document.getElementById(`plat-status-${p}`).style.color = '#00d4aa';
       });
 
-      log(`✓ [${meta.label}] Build complete → ${appName}${meta.ext}`, 'log-success', localT + 200);
+      log(`[${meta.label}] done -> ${appName}${meta.ext}`, 'log-success', localT + 200);
       offset = localT + 600;
     });
 
@@ -1166,8 +1165,8 @@
       progressFill.style.width = '100%';
       buildEta.textContent = '00:00';
       setStatus('done');
-      log('\n✓ All builds finished successfully!', 'log-success');
-      log('→ Downloads are ready below ↓', 'log-success');
+      log('\nall done!', 'log-success');
+      log('your files are below', 'log-success');
       state.buildRunning = false;
       state.buildDone = true;
 
@@ -1203,48 +1202,47 @@
           <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5.1L1 10"/>
         </svg>
         Build Again
-      `;
     });
   }
 
   /* ── Build steps config ──────────────────────────────────── */
   const buildSteps = {
     android: [
-      { msg: 'Setting up Gradle build environment...', type: 'log-info',    dur: 800  },
-      { msg: 'Installing Capacitor Android platform...', type: 'log-info',  dur: 1200 },
-      { msg: 'Syncing web assets to Android project...', type: 'log-info',  dur: 600  },
-      { msg: 'Compiling Java sources...', type: 'log-info',                 dur: 2000 },
-      { msg: 'Linking resources and assets...', type: 'log-info',           dur: 700  },
-      { msg: 'Signing APK (debug keystore)...', type: 'log-warning',        dur: 500  },
-      { msg: 'Running ProGuard shrinking pass...', type: 'log-info',        dur: 900  },
-      { msg: 'Generating final APK...', type: 'log-info',                   dur: 400  },
+      { msg: 'setting up gradle...', type: 'log-info',    dur: 800  },
+      { msg: 'installing capacitor android...', type: 'log-info',  dur: 1200 },
+      { msg: 'syncing web files...', type: 'log-info',  dur: 600  },
+      { msg: 'compiling java...', type: 'log-info',                 dur: 2000 },
+      { msg: 'linking resources...', type: 'log-info',           dur: 700  },
+      { msg: 'signing apk...', type: 'log-warning',        dur: 500  },
+      { msg: 'running proguard...', type: 'log-info',        dur: 900  },
+      { msg: 'packaging apk...', type: 'log-info',                   dur: 400  },
     ],
     windows: [
-      { msg: 'Initialising Electron builder...', type: 'log-info',          dur: 600  },
-      { msg: 'Bundling HTML/JS with webpack...', type: 'log-info',          dur: 1400 },
-      { msg: 'Injecting Electron main process...', type: 'log-info',        dur: 500  },
-      { msg: 'Compiling native Node addons...', type: 'log-info',           dur: 1000 },
-      { msg: 'Packaging resources & ASAR...', type: 'log-info',             dur: 800  },
-      { msg: 'Generating Windows installer (NSIS)...', type: 'log-info',    dur: 700  },
-      { msg: 'Code-signing EXE (self-signed)...', type: 'log-warning',      dur: 400  },
+      { msg: 'starting electron builder...', type: 'log-info',          dur: 600  },
+      { msg: 'bundling js with webpack...', type: 'log-info',          dur: 1400 },
+      { msg: 'injecting electron main process...', type: 'log-info',        dur: 500  },
+      { msg: 'compiling native addons...', type: 'log-info',           dur: 1000 },
+      { msg: 'packing into asar...', type: 'log-info',             dur: 800  },
+      { msg: 'building nsis installer...', type: 'log-info',    dur: 700  },
+      { msg: 'signing exe...', type: 'log-warning',      dur: 400  },
     ],
     mac: [
-      { msg: 'Cloning Electron Mac target...', type: 'log-info',            dur: 700  },
-      { msg: 'Bundling web assets...', type: 'log-info',                    dur: 900  },
-      { msg: 'Generating Info.plist...', type: 'log-info',                  dur: 300  },
-      { msg: 'Compiling universal binary (arm64/x86_64)...', type: 'log-info', dur: 2200 },
-      { msg: 'Signing .app bundle...', type: 'log-warning',                 dur: 600  },
-      { msg: 'Creating DMG image...', type: 'log-info',                     dur: 800  },
-      { msg: 'Notarising with Apple servers...', type: 'log-info',          dur: 1000 },
+      { msg: 'setting up electron mac target...', type: 'log-info',            dur: 700  },
+      { msg: 'bundling web files...', type: 'log-info',                    dur: 900  },
+      { msg: 'writing Info.plist...', type: 'log-info',                  dur: 300  },
+      { msg: 'compiling universal binary (arm64 + x86_64)...', type: 'log-info', dur: 2200 },
+      { msg: 'signing app bundle...', type: 'log-warning',                 dur: 600  },
+      { msg: 'creating dmg...', type: 'log-info',                     dur: 800  },
+      { msg: 'notarising with apple...', type: 'log-info',          dur: 1000 },
     ],
     ios: [
-      { msg: 'Installing Capacitor iOS platform...', type: 'log-info',      dur: 900  },
-      { msg: 'Syncing web assets to Xcode project...', type: 'log-info',    dur: 600  },
-      { msg: 'Configuring entitlements & plist...', type: 'log-info',       dur: 400  },
-      { msg: 'Running xcodebuild (Release, arm64)...', type: 'log-info',    dur: 3000 },
-      { msg: 'Signing IPA with provisioning profile...', type: 'log-warning', dur: 700 },
-      { msg: 'Running codesign verification...', type: 'log-info',          dur: 400  },
-      { msg: 'Packaging .ipa archive...', type: 'log-info',                 dur: 500  },
+      { msg: 'installing capacitor ios...', type: 'log-info',      dur: 900  },
+      { msg: 'syncing to xcode project...', type: 'log-info',    dur: 600  },
+      { msg: 'writing entitlements and plist...', type: 'log-info',       dur: 400  },
+      { msg: 'running xcodebuild...', type: 'log-info',    dur: 3000 },
+      { msg: 'signing ipa...', type: 'log-warning', dur: 700 },
+      { msg: 'verifying codesign...', type: 'log-info',          dur: 400  },
+      { msg: 'packaging ipa...', type: 'log-info',                 dur: 500  },
     ],
   };
 
@@ -1297,7 +1295,7 @@
   }
 
   function showError(msg) {
-    consoleLog.innerHTML += `<div class="log-error">✗ Error: ${escHtml(msg)}</div>`;
+    consoleLog.innerHTML += `<div class="log-error">error: ${escHtml(msg)}</div>`;
     setStatus('error');
   }
 
